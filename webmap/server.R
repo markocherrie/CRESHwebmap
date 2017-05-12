@@ -1,11 +1,10 @@
 library(shiny)
-# geocoding shiny
 library(RCurl)
 library(RJSONIO)
 library(plyr)
 library(leaflet)
 library(BAMMtools)
-#library(rgdal)
+library(rgdal)
 library(rgeos)
 library(dplyr)
 library(gtools)

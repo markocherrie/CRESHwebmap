@@ -1,7 +1,7 @@
 library(shiny)
 library(shinyjs)
 library(leaflet)
-#library(rgdal)
+library(rgdal)
 library(shinyBS)
 library(gtools)
 library(ggplot2)
