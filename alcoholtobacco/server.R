@@ -51,27 +51,21 @@ geog<-readRDS("geography/councilareas.rds")
 # functions
 
 ####
-Nomatim <- function(str){
+BING <- function(str){
   require(RCurl)
   require(RJSONIO)
-  str<-gsub(" ", "+", str)
-  url <- paste0("http://nominatim.openstreetmap.org/search?q=", str,"&addressdetails=1&format=json&limit=1")
-  raw_json <- scan(url, "", sep="\n")
-  if (nchar(raw_json)<3){
-    data<-NA}
-  else{
-    j <- fromJSON(raw_json) 
-    if (j[[1]]$lat>0) {
-      lat <- j[[1]]$lat
-      lng <- j[[1]]$lon
-    }
-    else {    
-      lat <- lng <- NA
-    }
+  u <- URLencode(paste0("http://dev.virtualearth.net/REST/v1/Locations?q=", str, "&maxResults=1&key=Apo4HssxpmYvVbDEUA464pmX5Y30xsQNlJ4pES6Z6D056puS63D90MLZlQ1yVeTG"))
+  d <- getURL(u)
+  j <- fromJSON(d,simplify = FALSE) 
+  if (j$resourceSets[[1]]$estimatedTotal > 0) {
+    lat <- j$resourceSets[[1]]$resources[[1]]$point$coordinates[[1]]
+    lng <- j$resourceSets[[1]]$resources[[1]]$point$coordinates[[2]]
+  }
+  else {    
+    lat <- lng <- NA
   }
   data<-c(lat,lng)
-  data[3]<-"Nomatim"
-  Sys.sleep(5)
+  data[3]<-"BING"
   return(data)
 }  
 
@@ -540,7 +534,7 @@ shinyServer(function(input, output) {
       mapit <- leafletProxy("map") 
       mapit  %>% clearShapes() %>% clearMarkers()
       str <- as.character(paste0(input$str, ", Scotland"))
-      map<-Nomatim(str)
+      map<-BING(str)
       
       if (!is.null(str)){
         lat<-map[1]
