@@ -13,6 +13,7 @@ library(jsonlite)
 library(mongolite)
 library(rgdal)
 library(DT)
+library(leaflet.extras)
 
 # devtools::install_github("hrbrmstr/ipapi")
 library(ipapi)
@@ -173,7 +174,8 @@ shinyServer(function(input, output) {
                 labels= c("Lowest", "","","Average","","", "Highest"),
                 opacity = 1
       ) %>%
-      addScaleBar(position = c("bottomleft")) 
+      addScaleBar(position = c("bottomleft"))%>%
+      addFullscreenControl() 
   })
   
   
