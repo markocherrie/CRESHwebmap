@@ -47,6 +47,7 @@ library(ipapi)
 
 ## load local authority shapefile
 geog<-readRDS("geography/councilareas.rds")
+geog3 <- spTransform(geog, CRS("+proj=longlat +datum=WGS84"))
 #geog2<-readOGR("geography", "LA")
 
 # functions
@@ -165,15 +166,23 @@ shinyServer(function(input, output) {
       addProviderTiles("CartoDB.Positron", group = "CartoDB Positron") %>%
       addProviderTiles("Stamen.Toner", group = "Toner") %>%
       addProviderTiles("OpenStreetMap.BlackAndWhite", group = "OSM") %>%
+      addPolygons(data=geog3,
+                  stroke=T,
+                  weight=3,
+                  color= "black",
+                  fillOpacity = 0,
+                  group = "LAOutline")
       setView(lng =-4.2026, lat = 56.4907, zoom = 7) %>%
       addLayersControl(
         baseGroups = c("CartoDB Positron", "Toner", "OSM"),
+        overlayGroups = c("LA Outline"),
         options = layersControlOptions(collapsed = TRUE)) %>%
       addLegend("bottomright", pal = pal, values=c(1:7),
                 title = "Rank",
                 labels= c("Lowest", "","","Average","","", "Highest"),
                 opacity = 1
       ) %>%
+       hideGroup("LA Outline") %>%
       addScaleBar(position = c("bottomleft"))%>%
       addFullscreenControl() 
   })
@@ -186,11 +195,6 @@ shinyServer(function(input, output) {
     if(!is.null(input$LAinput)){
       mapit <- leafletProxy("map") 
       mapit  %>% clearShapes() %>% clearMarkers() #%>%
-      #addPolygons(data=geog2,
-      #            stroke=T,
-      #            weight=3,
-      #            color= "black",
-      #            fillOpacity = 0)
       foo<-length(input$LAinput)
       if (foo==1 && input$LAinput!="Scotland"){
         datalist = list()
