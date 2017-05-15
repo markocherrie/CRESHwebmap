@@ -171,7 +171,7 @@ shinyServer(function(input, output) {
                   weight=3,
                   color= "black",
                   fillOpacity = 0,
-                  group = "LAOutline")
+                  group = "LAOutline") %>%
       setView(lng =-4.2026, lat = 56.4907, zoom = 7) %>%
       addLayersControl(
         baseGroups = c("CartoDB Positron", "Toner", "OSM"),
