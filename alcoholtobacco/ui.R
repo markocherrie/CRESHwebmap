@@ -15,22 +15,6 @@ list<-read.csv("data/list.csv", header=F)
 
 ## Somehow take out V1 in the selection box!!!
 
-# log scale
-JScode <-
-  "$(function() {
-    setTimeout(function(){
-      var vals = [0];
-      var powStart = 1;
-      var powStop = 7;
-      for (i = powStart; i <= powStop; i++) {
-        var val = Math.pow(10, i);
-        val = parseFloat(val.toFixed(8));
-        vals.push(val);
-      }
-      $('#range').data('ionRangeSlider').update({'values':vals})
-    }, 5)})"
-
-
 ##
 textInputRow<-function (inputId, label, value = "") 
 {
@@ -110,14 +94,13 @@ shinyUI(fluidPage(
     bsTooltip("LAinput", "We have used 2011 Scottish datazones as our smallest neighbourhood units. As there nearly 7,000, choose to display a subset by selecting up to 5 local authorities. If you do wish to view the whole of Scotland, select the Scotland option, however please be patient, this will result in much longer loading times", "top"
     ),
     
-    selectizeInput('LAinput', 'Local Authorities', choices = list, selected=c("City of Edinburgh", "Glasgow City"), multiple = TRUE, options = list(maxItems = 5)),
+    selectizeInput('LAinput', 'Local Authorities', choices = list, selected=c("City of Edinburgh"), multiple = TRUE, options = list(maxItems = 5)),
     div(style="display:inline-block", textInput("str", label =("Enter an Area of interest"), value = "")),
     bsTooltip("str", "If you would prefer to view a specific area, please type in an address, postcode or point of interest and click Enter. The location will be shown as a blue marker with data for the surrounding area local area presented on the map.", "top"
     ),
     div(style="display:inline-block",actionButton("goButton", "Enter")),
     tags$br(),
     uiOutput("Variable"),
-    checkboxInput("checkbox_1", label = "Advanced Options", value = T),
     selectInput("year", "Year",
                 list("2012" = "2012",
                      "2016" = "2016"),
