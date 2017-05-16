@@ -369,11 +369,11 @@ shinyServer(function(input, output) {
         ###################################################################################################################    
         
         ################## Hospital Admissions
-        HospAdd<-read.csv(paste0("data/Hosp.csv"))
-        HospAdd$ALCOHOL<-as.numeric(HospAdd$ALCOHOL)
-        Datazone<-merge(Datazone, HospAdd,by="code")
-        ScottishHospmean<-mean(HospAdd$ALCOHOL)
-        ScottishHosp90<-quantile(HospAdd$ALCOHOL, c(.90))
+        #HospAdd<-read.csv(paste0("data/Hosp.csv"))
+        #HospAdd$ALCOHOL<-as.numeric(HospAdd$ALCOHOL)
+        #Datazone<-merge(Datazone, HospAdd,by="code")
+        #ScottishHospmean<-mean(HospAdd$ALCOHOL)
+        #ScottishHosp90<-quantile(HospAdd$ALCOHOL, c(.90))
         #LAHospmean<-mean(Datazone@data$ALCOHOL)
         #LAHosp90<-quantile(HospAdd@data$ALCOHOL, c(.90))
         #SIMDHosp<-merge(HospAdd, add4, by.x="code", by.y="Data_Zone")
@@ -424,8 +424,6 @@ shinyServer(function(input, output) {
                           ifelse(Datazone@data[,16]>Scottish90th, "<font color='#EE2C2C'>This datazone is in the top 10% of neighbourhoods in Scotland.</font></li></ul>", "This datazone is not in the top 10% of neighbourhoods in Scotland.</li></ul>"),
                           "<b> Health </b></br>",
                           "<ul><li>The standardised ratio of hospital stays related to alcohol misuse is ", Datazone@data$ALCOHOL, "</li></br>",
-                          "</br>",
-                          "<li>This is ", round((Datazone@data$ALCOHOL/ScottishHospmean*100),0), ifelse(round(Datazone@data$ALCOHOL, 2)>round(ScottishHospmean, 2) ,"% higher than", "% of")," the Scottish average.</li>",
                           "<li>The proportion of the population being prescribed drugs for anxiety, depression or psychosis is ", Datazone@data$DEPRESS,"</li></br>",
                           "<li>The standardised mortality ratio is ", Datazone@data$SMR,"</li>",
                           "<br/>",
