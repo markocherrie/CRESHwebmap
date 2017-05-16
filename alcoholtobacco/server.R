@@ -368,6 +368,11 @@ shinyServer(function(input, output) {
         Datazone@data$LAcat4<-as.numeric(Datazone@data$LAcat4)
         ###################################################################################################################    
         
+        ################## Hospital Admissions
+        HospAdd<-read.csv(paste0("data/Hosp.csv"))
+        Datazone<-merge(Datazone, HospAdd,by="code")
+        
+        ###
         
         if(input$comparison=="SCO"){
           pal <- colorNumeric(c("#5d8bba", "#ffffe5", "#d73027"), 1:7)   
@@ -375,11 +380,15 @@ shinyServer(function(input, output) {
           ### superscript in leaflet
           
           popup <- paste0("<h3>", Datazone$name, "</h3><br>",
+                          "This datazone is within the intermediate zone ", Datazone@data$Intermediate_Zone, " in the local authority of ", Datazone@data$Councilname, "<br>",
                           "Density around the population centre is ", "<strong>", round(Datazone@data[,16], 2)," per km2","</strong>",
                           "<br/>",
                           "This is <strong>", round((Datazone@data[,16]/Datazone$Scottishaverage*100),0), ifelse(round(Datazone@data[,16], 2)>round(Datazone$Scottishaverage, 2) ,"% higher</strong> than", "%</strong> of")," the Scottish average",
                           "<br/>",
                           ifelse(Datazone@data[,16]>Scottish90th, "<strong><font color='#EE2C2C'>This datazone is in the top 10% of neighbourhoods in Scotland</font></strong>", ""),
+                          "Hospital stays related to alcohol misuse: standardised ratio: ", Datazone@data$ALCOHOL,
+                          "Proportion of population being prescribed drugs for anxiety, depression or psychosis: ", Datazone@data$DEPRESS,
+                          "Standardised mortality ratio: ", Datazone@data$SMR,
                           "<br/>",
                           "<br/>",
                           " More information available on this datazone ", "<b><a target='_blank' href='http://statistics.gov.scot/doc/statistical-geography/", Datazone$code,"'>here</a></b>")
