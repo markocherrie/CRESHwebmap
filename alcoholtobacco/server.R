@@ -372,6 +372,12 @@ shinyServer(function(input, output) {
         HospAdd<-read.csv(paste0("data/Hosp.csv"))
         Datazone<-merge(Datazone, HospAdd,by="code")
         
+        ## Choices
+        Bufferchoice<-input$buffer
+        Datatypechoice<-input$datatype
+        Yearchoice<-input$year
+        Rankchoice<-input$comparison
+        
         ###
         
         if(input$comparison=="SCO"){
@@ -380,8 +386,10 @@ shinyServer(function(input, output) {
           ### superscript in leaflet
           
           popup <- paste0("<h3>", Datazone$name, "</h3><br>",
-                          "<b> Geography </b> </br>",
-                          "This datazone is within the intermediate zone of ", Datazone@data$Intermediate_Zone, " and the local authority of ", Datazone@data$Councilname,"</br>",
+                          "<b> Description </b> </br>",
+                          "This datazone is within the local authority of ", Datazone@data$Councilname,"</br>",
+                          "You have selected to display ", Datatypechoice,   
+              
                           "</br>",
                           "<b> Alcohol and Tobacco Outlet Density </b></br>",
                           "<ul><li>Density around the population centre is ", round(Datazone@data[,16], 2)," per km2","</li>",
