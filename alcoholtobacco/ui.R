@@ -109,38 +109,15 @@ shinyUI(fluidPage(
     # adding the new div tag to the sidebsar            
     bsTooltip("LAinput", "We have used 2011 Scottish datazones as our smallest neighbourhood units. As there nearly 7,000, choose to display a subset by selecting up to 5 local authorities. If you do wish to view the whole of Scotland, select the Scotland option, however please be patient, this will result in much longer loading times", "top"
     ),
-    
-    selectizeInput('LAinput', 'Local Authorities', choices = list, selected=c("City of Edinburgh"), multiple = TRUE, options = list(maxItems = 5)),
+    selectizeInput('LAinput', 'Local Authorities', choices = list, multiple = TRUE, options = list(maxItems = 5)),
     div(style="display:inline-block", textInput("str", label =("Enter an Area of interest"), value = "")),
     bsTooltip("str", "If you would prefer to view a specific area, please type in an address, postcode or point of interest and click Enter. The location will be shown as a blue marker with data for the surrounding area local area presented on the map.", "top"
     ),
     div(style="display:inline-block",actionButton("goButton", "Enter")),
     tags$br(),
     uiOutput("Variable"),
-    selectInput("year", "Year",
-                list("2012" = "2012",
-                     "2016" = "2016"),
-                selected="2016"),
-    bsTooltip("buffer", "Here you can toggle the buffer size, that is, the distance you would expect people to travel to visit these retailers. Larger buffer sizes may be more appropriate for rural areas and smaller ones for urban areas.", "top"
-    ),
-    selectInput("buffer", "Buffer Size (m)",
-                list("400" = "400",
-                     "800" = "800",
-                     "1,000"  = "1000",
-                     "1,200"  = "1200",
-                     "1,600" = "1600",
-                     "2,000" = "2000",
-                     "3,000" = "3000",
-                     "4,000" = "4000",
-                     "5,000" = "5000"), selected="800"),
-    bsTooltip("comparison", "Datazones can be ranked in comparison to the local authority and Scottish average. In addition you can see each datazone ranked in comparison to other datazones of similar urban/rural or deprivation status.", "top"
-    ),
-    selectInput("comparison", "Rank Colour Options",
-                list("Compared to Local Authority Average" = "LA",
-                     "Compared to Scottish Average" = "SCO",
-                     "Compared to Urban/Rural Average"  = "URBRUR",
-                     "Compared to Deprivation Average"  = "SIMD"
-                ), selected="SCO"),
+    checkboxInput("checkbox_1", label = "Advanced Options", value = T),
+    uiOutput('test'),
   tags$br(),
     helpText("Application built in Rstudio (0.98.507) using data...acknowledgements...")),
   tags$br(),
