@@ -398,7 +398,7 @@ shinyServer(function(input, output) {
           popup <- paste0("<h3>", Datazone$name, "</h3><br>",
                           "<b> Description </b> </br>",
                           "This datazone is within the local authority of ", Datazone@data$Councilname,
-                          ". You have selected to display data for ", Datatypechoice, " for ", Yearchoice, ", with the buffer size set at ", Bufferchoice,"m,"," and colours ", Rankchoice,
+                          ". You have selected to display data for ", Datatypechoice, " for ", Yearchoice, ", with the buffer size set at ", Bufferchoice," m,"," and colours ", Rankchoice,
                           "</br></br><b>",
                           substr(Datatypechoice,1,7), " Outlet Density </b></br>",
                           "<ul><li>Density around the population centre is ", round(Datazone@data[,16], 2)," per km2","</li>",
@@ -410,7 +410,6 @@ shinyServer(function(input, output) {
                           "<ul><li>Hospital stays related to alcohol misuse: standardised ratio: ", Datazone@data$ALCOHOL, "</li></br>",
                           "<li>Proportion of population being prescribed drugs for anxiety, depression or psychosis: ", Datazone@data$DEPRESS,"</li></br>",
                           "<li>Standardised mortality ratio: ", Datazone@data$SMR,"</li>",
-                          "<br/>",
                           "<br/>",
                           "<b><a target='_blank' href='http://statistics.gov.scot/doc/statistical-geography/", Datazone$code,"'> Click here for more information available on this datazone</a></b>")
           
