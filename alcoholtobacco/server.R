@@ -424,10 +424,9 @@ shinyServer(function(input, output) {
                           ifelse(Datazone@data[,16]>Scottish90th, "<font color='#EE2C2C'>This datazone is in the top 10% of neighbourhoods in Scotland.</font></li></ul>", "This datazone is not in the top 10% of neighbourhoods in Scotland.</li></ul>"),
                           "<b> Health </b></br>",
                           "<ul><li>The standardised ratio of hospital stays related to alcohol misuse is ", Datazone@data$ALCOHOL, "</li></br>",
-                          "</br>",
                           "<li>This is ", round((Datazone@data$ALCOHOL/ScottishHospmean*100),0), ifelse(round(Datazone@data$ALCOHOL, 2)>round(ScottishHospmean, 2) ,"% higher than", "% of")," the Scottish average.</li>",
-                          "<li>The proportion of the population being prescribed drugs for anxiety, depression or psychosis is ", Datazone@data$DEPRESS,"</li></br>",
-                          "<li>The standardised mortality ratio is ", Datazone@data$SMR,"</li>",
+                          "<br/><li>",
+                          ifelse(Datazone@data$ALCOHOL>ScottishHosp90, "<font color='#EE2C2C'>This datazone is in the top 10% of neighbourhoods in Scotland.</font></li></ul>", "This datazone is not in the top 10% of neighbourhoods in Scotland.</li></ul>"),
                           "<br/>",
                           "<b><a target='_blank' href='http://statistics.gov.scot/doc/statistical-geography/", Datazone$code,"'> Click here for more information available on this datazone</a></b>")
           
