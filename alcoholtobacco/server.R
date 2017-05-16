@@ -388,7 +388,7 @@ shinyServer(function(input, output) {
                           "<br/>",
                           "<li>This is ", round((Datazone@data[,16]/Datazone$Scottishaverage*100),0), ifelse(round(Datazone@data[,16], 2)>round(Datazone$Scottishaverage, 2) ,"% higher than", "% of")," the Scottish average</li>",
                           "<br/><li>",
-                          ifelse(Datazone@data[,16]>Scottish90th, "This datazone is in the top 10% of neighbourhoods in Scotland</li></ul>", "This datazone is not in the top 10% of neighbourhoods in Scotland</li></ul>"),"</br>",
+                          ifelse(Datazone@data[,16]>Scottish90th, "This datazone is in the top 10% of neighbourhoods in Scotland</li></ul>", "This datazone is not in the top 10% of neighbourhoods in Scotland</li></ul>"),
                           "<b> Health </b></br>",
                           "<ul><li>Hospital stays related to alcohol misuse: standardised ratio: ", Datazone@data$ALCOHOL, "</li></br>",
                           "<li>Proportion of population being prescribed drugs for anxiety, depression or psychosis: ", Datazone@data$DEPRESS,"</li></br>",
