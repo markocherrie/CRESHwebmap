@@ -371,8 +371,8 @@ shinyServer(function(input, output) {
         ################## Hospital Admissions
         HospAdd<-read.csv(paste0("data/Hosp.csv"))
         Datazone<-merge(Datazone, HospAdd,by="code")
-        ScottishHospmean<-mean(HospAdd$ALCOHOL)
-        ScottishHosp90<-quantile(HospAdd$ALCOHOL, c(.90))
+        ScottishHospmean<-mean(as.numeric(HospAdd$ALCOHOL))
+        ScottishHosp90<-quantile(as.numeric(HospAdd$ALCOHOL), c(.90))
         LAHospmean<-mean(Datazone@data$ALCOHOL)
         LAHosp90<-quantile(HospAdd@data$ALCOHOL, c(.90))
         #SIMDHosp<-merge(HospAdd, add4, by.x="code", by.y="Data_Zone")
