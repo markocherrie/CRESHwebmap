@@ -371,6 +371,20 @@ shinyServer(function(input, output) {
         ################## Hospital Admissions
         HospAdd<-read.csv(paste0("data/Hosp.csv"))
         Datazone<-merge(Datazone, HospAdd,by="code")
+        ScottishHospmean<-mean(HospAdd$ALCOHOL)
+        ScottishHosp90<-quantile(HospAdd$ALCOHOL, c(.90))
+        LAHospmean<-mean(Datazone@data$ALCOHOL)
+        LAHosp90<-quantile(HospAdd@data$ALCOHOL, c(.90))
+        #SIMDHosp<-merge(HospAdd, add4, by.x="code", by.y="Data_Zone")
+        #SIMDHosp$SIMDrank5<-as.numeric(quantcut(as.numeric(SIMDHosp$Income_domain_2016_rank), 5))
+        #SIMDHosp<-subset(SIMDHosp, select=c(""))
+        #names(SIMDHosp)<-c("SIMDrank5", "SIMDmean")
+        #SIMDCalc<-merge(SIMDmean, SIMD, by="SIMDrank5")
+        #DepHospmean<-aggregate(as.numeric(SIMDHosp$ALCOHOL), by=list(SIMDHosp$SIMDrank5), FUN=mean, na.rm=TRUE)
+        #DepHosp90<-
+        #UrbRurHospmean<-
+        #UrbRurHosp90<-
+        
         
         ## Choices
         Bufferchoice<-input$buffer
@@ -399,18 +413,20 @@ shinyServer(function(input, output) {
           popup <- paste0("<h3>", Datazone$name, "</h3><br>",
                           "<b> Description </b> </br>",
                           "This datazone is within the local authority of ", Datazone@data$Councilname,
-                          ". You have selected to display data for ", Datatypechoice, " for ", Yearchoice, ", with the buffer size of ", Bufferchoice," m,"," and colours ", Rankchoice,
+                          ". You have selected to display density data for ", Datatypechoice, " for ", Yearchoice, ", with the buffer size of ", Bufferchoice," m,"," and colours ", Rankchoice,
                           "</br></br><b>",
                           substr(Datatypechoice,7,14), " Outlet Density </b></br>",
-                          "<ul><li>Density around the population centre is ", round(Datazone@data[,16], 2)," per km<sup>2</sup>","</li>",
+                          "<ul><li>Density around the population centre is ", round(Datazone@data[,16], 2)," per km<sup>2</sup>.","</li>",
                           "<br/>",
                           "<li>This is ", round((Datazone@data[,16]/Datazone$Scottishaverage*100),0), ifelse(round(Datazone@data[,16], 2)>round(Datazone$Scottishaverage, 2) ,"% higher than", "% of")," the Scottish average.</li>",
                           "<br/><li>",
-                          ifelse(Datazone@data[,16]>Scottish90th, "<font color='#EE2C2C'>This datazone is in the top 10% of neighbourhoods in Scotland</font></li></ul>", "This datazone is not in the top 10% of neighbourhoods in Scotland</li></ul>"),
+                          ifelse(Datazone@data[,16]>Scottish90th, "<font color='#EE2C2C'>This datazone is in the top 10% of neighbourhoods in Scotland.</font></li></ul>", "This datazone is not in the top 10% of neighbourhoods in Scotland.</li></ul>"),
                           "<b> Health </b></br>",
-                          "<ul><li>Hospital stays related to alcohol misuse: standardised ratio: ", Datazone@data$ALCOHOL, "</li></br>",
-                          "<li>Proportion of population being prescribed drugs for anxiety, depression or psychosis: ", Datazone@data$DEPRESS,"</li></br>",
-                          "<li>Standardised mortality ratio: ", Datazone@data$SMR,"</li>",
+                          "<ul><li>The standardised ratio of hospital stays related to alcohol misuse is ", Datazone@data$ALCOHOL, "</li></br>",
+                          "</br>",
+                          "<li>This is ", round((Datazone@data$ALCOHOL/ScottishHospmean*100),0), ifelse(round(Datazone@data$ALCOHOL, 2)>round(ScottishHospmean, 2) ,"% higher than", "% of")," the Scottish average.</li>",
+                          "<li>The proportion of the population being prescribed drugs for anxiety, depression or psychosis is ", Datazone@data$DEPRESS,"</li></br>",
+                          "<li>The standardised mortality ratio is ", Datazone@data$SMR,"</li>",
                           "<br/>",
                           "<b><a target='_blank' href='http://statistics.gov.scot/doc/statistical-geography/", Datazone$code,"'> Click here for more information available on this datazone</a></b>")
           
