@@ -378,6 +378,16 @@ shinyServer(function(input, output) {
         Yearchoice<-input$year
         Rankchoice<-input$comparison
         
+        Datatypechoice<-sub("alcoholOff", "Alcohol Off Sales", Datatypechoice)        
+        Datatypechoice<-sub("alcoholBoth", "Alcohol Both On and Off Sales", Datatypechoice)    
+        Datatypechoice<-sub("alcoholTOTAL", "Alcohol Total Sales", Datatypechoice)    
+        Datatypechoice<-sub("tobaccoTOTAL", "Tobacco Total Sales", Datatypechoice)    
+        
+        Rankchoice<-sub("LA", "in comparison to Local Authority average", Rankchoice)        
+        Rankchoice<-sub("SCO", "in comparison to Scottish average", Rankchoice)    
+        Rankchoice<-sub("URBRUR", "in comparison to Urban/Rural average", Rankchoice)    
+        Rankchoice<-sub("SIMD", "in comparison to Deprivation average", Rankchoice)    
+        
         ###
         
         if(input$comparison=="SCO"){
@@ -388,10 +398,9 @@ shinyServer(function(input, output) {
           popup <- paste0("<h3>", Datazone$name, "</h3><br>",
                           "<b> Description </b> </br>",
                           "This datazone is within the local authority of ", Datazone@data$Councilname,
-                          "You have selected to display ", Datatypechoice, Yearchoice, Rankchoice,Bufferchoice,
-              
-                          "</br></br>",
-                          "<b> Alcohol and Tobacco Outlet Density </b></br>",
+                          ". You have selected to display data for ", Datatypechoice, " for ", Yearchoice, " with the buffer size set at ", Bufferchoice,"m"," and colours ", Rankchoice,
+                          "</br></br><b>",
+                          substr(Datatypechoice,1,7), "Outlet Density </b></br>",
                           "<ul><li>Density around the population centre is ", round(Datazone@data[,16], 2)," per km2","</li>",
                           "<br/>",
                           "<li>This is ", round((Datazone@data[,16]/Datazone$Scottishaverage*100),0), ifelse(round(Datazone@data[,16], 2)>round(Datazone$Scottishaverage, 2) ,"% higher than", "% of")," the Scottish average</li>",
