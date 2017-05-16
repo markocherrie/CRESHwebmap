@@ -568,6 +568,25 @@ shinyServer(function(input, output) {
   ## need to clear it with a button!
   location2<-NA
   
+  observe({
+    if(!is.null(input$lat)){
+      mapit <- leafletProxy("map")
+      mapit  %>% clearShapes() 
+      lat <- input$lat
+      long <- input$long
+      
+      
+      if (!is.na(lat)){
+        mapit %>% 
+          setView(lng =  input$long, lat = input$lat, zoom = 14)
+        
+      } else {
+        mapit  %>% setView(lng =-4.2026, lat = 56.4907, zoom = 7) 
+      }
+    }
+    })
+  
+  
   ### gets geolocation manually
   ### To DO: make it so that it zooms in, change up location of fitBounds
   ### Check this out:  http://www.r-graph-gallery.com/2017/03/14/4-tricks-for-working-with-r-leaflet-and-shiny/ 
