@@ -1,19 +1,17 @@
 library(shiny)
-library(leaflet)
 # geocoding shiny
-require(RCurl)
-require(RJSONIO)
-require(plyr)
+library(RCurl)
+library(RJSONIO)
+library(plyr)
+library(leaflet)
 library(BAMMtools)
 library(rgdal)
 library(rgeos)
 library(dplyr)
 library(gtools)
-library(jsonlite)
-library(mongolite)
-library(rgdal)
 library(DT)
-library(leaflet.extras)
+library(mongolite)
+library(sp)
 
 # devtools::install_github("hrbrmstr/ipapi")
 library(ipapi)
@@ -47,13 +45,14 @@ library(ipapi)
 
 ## load local authority shapefile
 geog<-readRDS("geography/councilareas.rds")
-#geog3 <- spTransform(geog, CRS("+proj=longlat +datum=WGS84"))
 #geog2<-readOGR("geography", "LA")
 
 # functions
 
 ####
 BING <- function(str){
+  require(RCurl)
+  require(RJSONIO)
   u <- URLencode(paste0("http://dev.virtualearth.net/REST/v1/Locations?q=", str, "&maxResults=1&key=Apo4HssxpmYvVbDEUA464pmX5Y30xsQNlJ4pES6Z6D056puS63D90MLZlQ1yVeTG"))
   d <- getURL(u)
   j <- RJSONIO::fromJSON(d,simplify = FALSE) 
@@ -175,8 +174,7 @@ shinyServer(function(input, output) {
                 labels= c("Lowest", "","","Average","","", "Highest"),
                 opacity = 1
       ) %>%
-      addScaleBar(position = c("bottomleft"))%>%
-      addFullscreenControl() 
+      addScaleBar(position = c("bottomleft")) 
   })
   
   
@@ -187,6 +185,11 @@ shinyServer(function(input, output) {
     if(!is.null(input$LAinput)){
       mapit <- leafletProxy("map") 
       mapit  %>% clearShapes() %>% clearMarkers() #%>%
+      #addPolygons(data=geog2,
+      #            stroke=T,
+      #            weight=3,
+      #            color= "black",
+      #            fillOpacity = 0)
       foo<-length(input$LAinput)
       if (foo==1 && input$LAinput!="Scotland"){
         datalist = list()
@@ -271,7 +274,7 @@ shinyServer(function(input, output) {
         ###################################################################################################################
         ################## Urban Rural
         add2<-read.csv(paste0("data/urbanrural.csv"))
-        UrbRur<-merge(add, add2, by.x="CODE", by.y="Datazone2011")
+        UrbRur<-merge(add, add2, by.x="CODE", by.y="ï..Datazone2011")
         UrbRur$UR6_2013_2014<-as.numeric(as.character(UrbRur$UR6_2013_2014))
         UrbRurmean <-aggregate(UrbRur[,3], by=list(UrbRur$UR6_2013_2014), FUN=mean, na.rm=TRUE)
         names(UrbRurmean)<-c("UR6_2013_2014", "UR6_2013_2014mean")
@@ -520,609 +523,659 @@ shinyServer(function(input, output) {
   
   
   ## need to clear it with a button!
-  location2<-NA
   
-  ### gets geolocation manually
-  ### To DO: make it so that it zooms in, change up location of fitBounds
-  ### Check this out:  http://www.r-graph-gallery.com/2017/03/14/4-tricks-for-working-with-r-leaflet-and-shiny/ 
   observe({
-    observeEvent(input$goButton, {
-      mapit <- leafletProxy("map") 
-      mapit  %>% clearShapes() %>% clearMarkers()
-      str <- as.character(paste0(input$str, ", Scotland"))
-      map<-BING(str)
+    if(!is.null(input$lat)){
+      mapit <- leafletProxy("map")
+      mapit  %>% clearShapes() 
+      lat <- input$lat
+      long <- input$long
       
-      if (!is.null(str)){
-        lat<-map[1]
-        long<-map[2]
+      
+      if (!is.na(lat)){
+        mapit %>% 
+          setView(lng =  input$long, lat = input$lat, zoom = 14)
         
-        if (!is.na(lat)){
-          mapit %>% 
-            setView(lng =  long, lat = lat, zoom = 14)
+      } else {
+        mapit  %>% setView(lng =-4.2026, lat = 56.4907, zoom = 7) 
+      }
+      
+      map<-SpatialPoints(cbind(as.numeric(long),as.numeric(lat)))
+      map2<-as.data.frame(cbind(long=as.numeric(long), lat=as.numeric(lat)))
+      proj4string(map) <- CRS("+proj=longlat +datum=WGS84")
+      map<-spTransform(map, proj4string(geog))
+      location<-over(map, geog , fn = NULL)
+      location2<-location[1,2]
+      
+      observe({
+        if (!is.null(location2)){  
+          Datazone<-readRDS(paste0("geography/DZ/la/", trimws(location2), ".rds"))
+          Datazone <- spTransform(Datazone, CRS("+proj=longlat +datum=WGS84"))
+          Datazone2 <- Datazone[location[1,2], ]
+          buffer<-gBuffer(map, width = 3000)
+          buffer<-spTransform(buffer, proj4string(Datazone))
+          Datazone3 <-gIntersects(Datazone, buffer, byid = T)
+          Datazone3<- as.data.frame(t(Datazone3))
+          Datazone@data <-cbind(Datazone@data, Datazone3)
+          Datazone<-Datazone[Datazone@data$buffer==T, ]
           
-        } else {
-          mapit  %>% setView(lng =-4.2026, lat = 56.4907, zoom = 7) 
-        } 
+          ### get the data in
+          data <- as.character(paste0(input$buffer, input$datatype, input$year, ".csv"))
+          add<-read.csv(paste0("data/output/",data))
+          Scotlandmean<-mean(add[,3])
+          Datazone$Scottishaverage<-Scotlandmean
+          Scottish90th<-quantile(add[,3], c(.90)) 
+          add$CODE<-trimws(add$CODE)
+          Datazone<-merge(Datazone, add, by.x="datazone", by.y="CODE")
+          
+          
+          ###
+        }
+      })
+      
+      
+      
+      ### gets geolocation manually
+      ### To DO: make it so that it zooms in, change up location of fitBounds
+      ### Check this out:  http://www.r-graph-gallery.com/2017/03/14/4-tricks-for-working-with-r-leaflet-and-shiny/ 
+      
+      observeEvent(input$goButton, {
+        mapit <- leafletProxy("map") 
+        mapit  %>% clearShapes() %>% clearMarkers()
+        str <- as.character(paste0(input$str, ", Scotland"))
+        map<-BING(str)
         
-        ## map 2 is the red dot location
-        map2<-as.data.frame(cbind(long=as.numeric(long), lat=as.numeric(lat)))
-        map<-SpatialPoints(cbind(as.numeric(long),as.numeric(lat)))
-        proj4string(map) <- CRS("+proj=longlat +datum=WGS84")
-        map<-spTransform(map, proj4string(geog))
-        location<-over(map, geog , fn = NULL)
-        location2<-location[1,2]
-        
-        observe({
-          if (!is.na(location2)){
-            mapit  %>% clearShapes() %>%  setView(lng =  long, lat = lat, zoom = 14)
-            Datazone<-readRDS(paste0("geography/DZ/la/", trimws(location2), ".rds"))
-            Datazone <- spTransform(Datazone, CRS("+proj=longlat +datum=WGS84"))
-            # Datazone2 is the datazone location
-            Datazone2 <- Datazone[location[1,2], ]
-            buffer<-gBuffer(map, width = 3000)
-            buffer<-spTransform(buffer, proj4string(Datazone))
-            Datazone3 <-gIntersects(Datazone, buffer, byid = T)
-            Datazone3<- as.data.frame(t(Datazone3))
-            Datazone@data <-cbind(Datazone@data, Datazone3)
-            Datazone<-Datazone[Datazone@data$buffer==T, ]
+        if (!is.null(str)){
+          lat<-map[1]
+          long<-map[2]
+          
+          if (!is.na(lat)){
+            mapit %>% 
+              setView(lng =  long, lat = lat, zoom = 14)
             
-            
-            ### get the data in
-            data <- as.character(paste0(input$buffer, input$datatype, input$year, ".csv"))
-            add<-read.csv(paste0("data/output/",data))
-            Scotlandmean<-mean(add[,3])
-            Datazone$Scottishaverage<-Scotlandmean
-            Scottish90th<-quantile(add[,3], c(.90)) 
-            add$CODE<-trimws(add$CODE)
-            Datazone<-merge(Datazone, add, by.x="datazone", by.y="CODE")
-            Datazone$stdareaha<-NULL
-            Datazone$stdareakm2<-NULL
-            Datazone$shape_leng<-NULL
-            
-            #### Mulitple options- generate variable that is scottish average
-            ############################# have to make the categories for SCOTTISH AVERAGE #############################
-            
-            Datazone@data$SCOcat[Datazone@data[,16]>=(Scotlandmean-0.2*Scotlandmean) & Datazone@data[,16]<=Scotlandmean+(0.15*Scotlandmean)]<-4
-            Datazone2<-subset(Datazone, Datazone@data[,16]<(Scotlandmean-0.2*Scotlandmean))
-            breaks1<-unique(quantile(Datazone2@data[,16], probs=0:3/3))
-            Datazone@data$SCOcat2<-ifelse(Datazone@data[,16]<(Scotlandmean-0.2*Scotlandmean), cut(Datazone@data[,16], unique(breaks1), include.lowest=TRUE, labels=FALSE), NA)
-            Datazone3<-subset(Datazone, Datazone@data[,16]>Scotlandmean+(0.15*Scotlandmean))
-            breaks2<-unique(quantile(Datazone3@data[,16], probs=0:3/3))
-            Datazone@data$SCOcat3<-ifelse(Datazone@data[,16]>Scotlandmean+(0.15*Scotlandmean), cut(Datazone@data[,16], unique(breaks2), include.lowest=TRUE, labels=FALSE), NA)
-            Datazone@data$SCOcat3[Datazone@data$SCOcat3==1]<-5
-            Datazone@data$SCOcat3[Datazone@data$SCOcat3==2]<-6
-            Datazone@data$SCOcat3[Datazone@data$SCOcat3==3]<-7
-            Datazone@data$SCOcat4<-paste(Datazone@data$SCOcat, Datazone@data$SCOcat2, Datazone@data$SCOcat3)
-            Datazone@data$SCOcat4<-trimws(Datazone@data$SCOcat4)
-            Datazone@data$SCOcat4<-sub("NA NA", "", Datazone@data$SCOcat4)
-            Datazone@data$SCOcat4<-sub(" NA", "", Datazone@data$SCOcat4)
-            Datazone@data$SCOcat4<-sub("NA ", "", Datazone@data$SCOcat4)
-            Datazone@data$SCOcat4<-trimws(Datazone@data$SCOcat4)
-            Datazone@data$SCOcat4<-as.numeric(Datazone@data$SCOcat4)
-            
-            ## too slow load up from file- simplify-
-            # Datazone@data$LAid<-99
-            # LAoutline <- gUnaryUnion(Datazone, id = Datazone@data$LAid)
-            
-            ###################################################################################################################
-            ################## Urban Rural
-            add2<-read.csv(paste0("data/urbanrural.csv"))
-            UrbRur<-merge(add, add2, by.x="CODE", by.y="Datazone2011")
-            UrbRur$UR6_2013_2014<-as.numeric(as.character(UrbRur$UR6_2013_2014))
-            UrbRurmean <-aggregate(UrbRur[,3], by=list(UrbRur$UR6_2013_2014), FUN=mean, na.rm=TRUE)
-            names(UrbRurmean)<-c("UR6_2013_2014", "UR6_2013_2014mean")
-            UrbRurCalc<-merge(UrbRurmean, UrbRur, by="UR6_2013_2014")
-            UrbRurCalc90<-aggregate(UrbRur[,3], by = list(UrbRur$UR6_2013_2014), FUN = function(x) quantile(x, probs = 0.90))
-            names(UrbRurCalc90)<-c("UR6_2013_2014", "UR6_2013_201490")
-            UrbRurCalc<-merge(UrbRurCalc, UrbRurCalc90, by="UR6_2013_2014")
-            
-            
-            ###############
-            UrbRurCalc$UrbRurcat[UrbRurCalc[,5]>=(UrbRurCalc$UR6_2013_2014mean-0.2*UrbRurCalc$UR6_2013_2014mean) & UrbRurCalc[,5]<=UrbRurCalc$UR6_2013_2014mean+(0.15*UrbRurCalc$UR6_2013_2014mean)]<-4
-            UrbRurCalc2<-subset(UrbRurCalc, UrbRurCalc[,5]<(UrbRurCalc$UR6_2013_2014mean-0.2*UrbRurCalc$UR6_2013_2014mean))
-            breaks5<-unique(quantile(UrbRurCalc2[,5], probs=0:3/3))
-            UrbRurCalc$UrbRurcat2<-ifelse(UrbRurCalc[,5]<(UrbRurCalc$UR6_2013_2014mean-0.2*UrbRurCalc$UR6_2013_2014mean), cut(UrbRurCalc[,5], unique(breaks5), include.lowest=TRUE, labels=FALSE), NA)
-            UrbRurCalc3<-subset(UrbRurCalc, UrbRurCalc[,5]>UrbRurCalc$UR6_2013_2014mean+(0.15*UrbRurCalc$UR6_2013_2014mean))
-            breaks6<-unique(quantile(UrbRurCalc3[,5], probs=0:3/3))
-            UrbRurCalc$UrbRurcat3<-ifelse(UrbRurCalc[,5]>UrbRurCalc$UR6_2013_2014mean+(0.15*UrbRurCalc$UR6_2013_2014mean), cut(UrbRurCalc[,5], unique(breaks6), include.lowest=TRUE, labels=FALSE), NA)
-            UrbRurCalc$UrbRurcat3[UrbRurCalc$UrbRurcat3==1]<-5
-            UrbRurCalc$UrbRurcat3[UrbRurCalc$UrbRurcat3==2]<-6
-            UrbRurCalc$UrbRurcat3[UrbRurCalc$UrbRurcat3==3]<-7
-            UrbRurCalc$UrbRurcat4<-paste(UrbRurCalc$UrbRurcat, UrbRurCalc$UrbRurcat2, UrbRurCalc$UrbRurcat3)
-            UrbRurCalc$UrbRurcat4<-trimws(UrbRurCalc$UrbRurcat4)
-            UrbRurCalc$UrbRurcat4<-sub("NA NA", "", UrbRurCalc$UrbRurcat4)
-            UrbRurCalc$UrbRurcat4<-sub(" NA", "", UrbRurCalc$UrbRurcat4)
-            UrbRurCalc$UrbRurcat4<-sub("NA ", "", UrbRurCalc$UrbRurcat4)
-            UrbRurCalc$UrbRurcat4<-trimws(UrbRurCalc$UrbRurcat4)
-            UrbRurCalc$UrbRurcat4<-as.numeric(UrbRurCalc$UrbRurcat4)
-            UrbRurCalcAdd<-subset(UrbRurCalc, select=c("CODE", "UrbRurcat4", "UR6_2013_2014mean", "UR6_2013_201490", "UR6_2013_2014"))
-            Datazone<-merge(Datazone, UrbRurCalcAdd,by.x="code", by.y="CODE")
-            
-            
-            ###################################################################################################################
-            ######################   SIMD
-            add4<-read.csv(paste0("data/SIMD.csv"))
-            SIMD<-merge(add, add4, by.x="CODE", by.y="Data_Zone")
-            SIMD$SIMDrank5<-as.numeric(quantcut(as.numeric(SIMD$Income_domain_2016_rank), 5))
-            SIMDmean <-aggregate(SIMD[,3], by=list(SIMD$SIMDrank5), FUN=mean, na.rm=TRUE)
-            names(SIMDmean)<-c("SIMDrank5", "SIMDmean")
-            SIMDCalc<-merge(SIMDmean, SIMD, by="SIMDrank5")
-            SIMDCalc90<-aggregate(SIMD[,3], by = list(SIMD$SIMDrank5), FUN = function(x) quantile(x, probs = 0.90))
-            names(SIMDCalc90)<-c("SIMDrank5", "SIMD90")
-            SIMDCalc<-merge(SIMDCalc, SIMDCalc90, by="SIMDrank5")
-            
-            
-            SIMDCalc$SIMDcat[SIMDCalc[,5]>=(SIMDCalc$SIMDmean-0.2*SIMDCalc$SIMDmean) & SIMDCalc[,5]<=SIMDCalc$SIMDmean+(0.15*SIMDCalc$SIMDmean)]<-4
-            SIMDCalc2<-subset(SIMDCalc, SIMDCalc[,5]<(SIMDCalc$SIMDmean-0.2*SIMDCalc$SIMDmean))
-            breaks5<-unique(quantile(SIMDCalc2[,5], probs=0:3/3))
-            SIMDCalc$SIMDcat2<-ifelse(SIMDCalc[,5]<(SIMDCalc$SIMDmean-0.2*SIMDCalc$SIMDmean), cut(SIMDCalc[,5], unique(breaks5), include.lowest=TRUE, labels=FALSE), NA)
-            SIMDCalc3<-subset(SIMDCalc, SIMDCalc[,5]>SIMDCalc$SIMDmean+(0.15*SIMDCalc$SIMDmean))
-            breaks6<-unique(quantile(SIMDCalc3[,5], probs=0:3/3))
-            SIMDCalc$SIMDcat3<-ifelse(SIMDCalc[,5]>SIMDCalc$SIMDmean+(0.15*SIMDCalc$SIMDmean), cut(SIMDCalc[,5], unique(breaks6), include.lowest=TRUE, labels=FALSE), NA)
-            SIMDCalc$SIMDcat3[SIMDCalc$SIMDcat3==1]<-5
-            SIMDCalc$SIMDcat3[SIMDCalc$SIMDcat3==2]<-6
-            SIMDCalc$SIMDcat3[SIMDCalc$SIMDcat3==3]<-7
-            SIMDCalc$SIMDcat4<-paste(SIMDCalc$SIMDcat, SIMDCalc$SIMDcat2, SIMDCalc$SIMDcat3)
-            SIMDCalc$SIMDcat4<-trimws(SIMDCalc$SIMDcat4)
-            SIMDCalc$SIMDcat4<-sub("NA NA", "", SIMDCalc$SIMDcat4)
-            SIMDCalc$SIMDcat4<-sub(" NA", "", SIMDCalc$SIMDcat4)
-            SIMDCalc$SIMDcat4<-sub("NA ", "", SIMDCalc$SIMDcat4)
-            SIMDCalc$SIMDcat4<-trimws(SIMDCalc$SIMDcat4)
-            SIMDCalc$SIMDcat4<-as.numeric(SIMDCalc$SIMDcat4)
-            SIMDCalcAdd<-subset(SIMDCalc, select=c("CODE", "SIMDcat4", "SIMDmean", "SIMD90", "SIMDrank5"))
-            Datazone<-merge(Datazone, SIMDCalcAdd,by.x="code", by.y="CODE")
-            
-            
-            
-            ############################# have to make the categories for LA AVERAGE #############################
-            LAmean<-mean(Datazone@data[,16])
-            LA90th<-quantile(Datazone@data[,16], c(.90)) 
-            # have to make the categories
-            Datazone@data$LAcat[Datazone@data[,16]>=(LAmean-0.2*LAmean) & Datazone@data[,16]<=LAmean+(0.15*LAmean)]<-4
-            Datazone2<-subset(Datazone, Datazone@data[,16]<(LAmean-0.2*LAmean))
-            breaks3<-unique(quantile(Datazone2@data[,16], probs=0:3/3))
-            if (length(breaks3)>1 ){
-              Datazone@data$LAcat2<-ifelse(Datazone@data[,16]<(LAmean-0.2*LAmean), cut(Datazone@data[,16], unique(breaks3), include.lowest=TRUE, labels=FALSE), NA)
-            } else {
-              Datazone@data$LAcat2[Datazone@data[,16]<(LAmean-0.2*LAmean)]<-1
-            }
-            Datazone3<-subset(Datazone, Datazone@data[,16]>LAmean+(0.15*LAmean))
-            breaks4<-unique(quantile(Datazone3@data[,16], probs=0:3/3))
-            if (length(breaks4)>1){
-              Datazone@data$LAcat3<-ifelse(Datazone@data[,16]>LAmean+(0.15*LAmean), cut(Datazone@data[,16], unique(breaks4), include.lowest=TRUE, labels=FALSE), NA)
-            } else {   Datazone@data$LAcat3<-1
-            }
-            Datazone@data$LAcat3[Datazone@data$LAcat3==1]<-5
-            Datazone@data$LAcat3[Datazone@data$LAcat3==2]<-6
-            Datazone@data$LAcat3[Datazone@data$LAcat3==3]<-7
-            Datazone@data$LAcat4<-paste(Datazone@data$LAcat, Datazone@data$LAcat2, Datazone@data$LAcat3)
-            Datazone@data$LAcat4<-trimws(Datazone@data$LAcat4)
-            Datazone@data$LAcat4<-sub("NA NA", "", Datazone@data$LAcat4)
-            Datazone@data$LAcat4<-sub(" NA", "", Datazone@data$LAcat4)
-            Datazone@data$LAcat4<-sub("NA ", "", Datazone@data$LAcat4)
-            Datazone@data$LAcat4<-trimws(Datazone@data$LAcat4)
-            Datazone@data$LAcat4<-as.numeric(Datazone@data$LAcat4)
-            ###################################################################################################################    
-            
-            
-            
-            if(input$comparison=="SCO"){
-              pal <- colorNumeric(c("#5d8bba", "#ffffe5", "#d73027"), 1:7)   
+          } else {
+            mapit  %>% setView(lng =-4.2026, lat = 56.4907, zoom = 7) 
+          } 
+          
+          ## map 2 is the red dot location
+          map2<-as.data.frame(cbind(long=as.numeric(long), lat=as.numeric(lat)))
+          map<-SpatialPoints(cbind(as.numeric(long),as.numeric(lat)))
+          proj4string(map) <- CRS("+proj=longlat +datum=WGS84")
+          map<-spTransform(map, proj4string(geog))
+          location<-over(map, geog , fn = NULL)
+          location2<-location[1,2]
+          
+          observe({
+            if (!is.na(location2)){
+              mapit  %>% clearShapes() %>%  setView(lng =  long, lat = lat, zoom = 14)
+              Datazone<-readRDS(paste0("geography/DZ/la/", trimws(location2), ".rds"))
+              Datazone <- spTransform(Datazone, CRS("+proj=longlat +datum=WGS84"))
+              # Datazone2 is the datazone location
+              Datazone2 <- Datazone[location[1,2], ]
+              buffer<-gBuffer(map, width = 3000)
+              buffer<-spTransform(buffer, proj4string(Datazone))
+              Datazone3 <-gIntersects(Datazone, buffer, byid = T)
+              Datazone3<- as.data.frame(t(Datazone3))
+              Datazone@data <-cbind(Datazone@data, Datazone3)
+              Datazone<-Datazone[Datazone@data$buffer==T, ]
               
-              ### superscript in leaflet
               
-              popup <- paste0("<h3>", Datazone$name, "</h3><br>",
-                              "Density around the population centre is ", "<strong>", round(Datazone@data[,16], 2)," per km2","</strong>",
-                              "<br/>",
-                              "This is <strong>", round((Datazone@data[,16]/Datazone$Scottishaverage*100),0), ifelse(round(Datazone@data[,16], 2)>round(Datazone$Scottishaverage, 2) ,"% higher</strong> than", "%</strong> of")," the Scottish average",
-                              "<br/>",
-                              ifelse(Datazone@data[,16]>Scottish90th, "<strong><font color='#EE2C2C'>This datazone is in the top 10% of neighbourhoods in Scotland</font></strong>", ""),
-                              "<br/>",
-                              "<br/>",
-                              " More information available on this datazone ", "<b><a target='_blank' href='http://statistics.gov.scot/doc/statistical-geography/", Datazone$code,"'>here</a></b>")
+              ### get the data in
+              data <- as.character(paste0(input$buffer, input$datatype, input$year, ".csv"))
+              add<-read.csv(paste0("data/output/",data))
+              Scotlandmean<-mean(add[,3])
+              Datazone$Scottishaverage<-Scotlandmean
+              Scottish90th<-quantile(add[,3], c(.90)) 
+              add$CODE<-trimws(add$CODE)
+              Datazone<-merge(Datazone, add, by.x="datazone", by.y="CODE")
+              Datazone$stdareaha<-NULL
+              Datazone$stdareakm2<-NULL
+              Datazone$shape_leng<-NULL
               
-              #################
-              mapit  %>%
+              #### Mulitple options- generate variable that is scottish average
+              ############################# have to make the categories for SCOTTISH AVERAGE #############################
+              
+              Datazone@data$SCOcat[Datazone@data[,16]>=(Scotlandmean-0.2*Scotlandmean) & Datazone@data[,16]<=Scotlandmean+(0.15*Scotlandmean)]<-4
+              Datazone2<-subset(Datazone, Datazone@data[,16]<(Scotlandmean-0.2*Scotlandmean))
+              breaks1<-unique(quantile(Datazone2@data[,16], probs=0:3/3))
+              Datazone@data$SCOcat2<-ifelse(Datazone@data[,16]<(Scotlandmean-0.2*Scotlandmean), cut(Datazone@data[,16], unique(breaks1), include.lowest=TRUE, labels=FALSE), NA)
+              Datazone3<-subset(Datazone, Datazone@data[,16]>Scotlandmean+(0.15*Scotlandmean))
+              breaks2<-unique(quantile(Datazone3@data[,16], probs=0:3/3))
+              Datazone@data$SCOcat3<-ifelse(Datazone@data[,16]>Scotlandmean+(0.15*Scotlandmean), cut(Datazone@data[,16], unique(breaks2), include.lowest=TRUE, labels=FALSE), NA)
+              Datazone@data$SCOcat3[Datazone@data$SCOcat3==1]<-5
+              Datazone@data$SCOcat3[Datazone@data$SCOcat3==2]<-6
+              Datazone@data$SCOcat3[Datazone@data$SCOcat3==3]<-7
+              Datazone@data$SCOcat4<-paste(Datazone@data$SCOcat, Datazone@data$SCOcat2, Datazone@data$SCOcat3)
+              Datazone@data$SCOcat4<-trimws(Datazone@data$SCOcat4)
+              Datazone@data$SCOcat4<-sub("NA NA", "", Datazone@data$SCOcat4)
+              Datazone@data$SCOcat4<-sub(" NA", "", Datazone@data$SCOcat4)
+              Datazone@data$SCOcat4<-sub("NA ", "", Datazone@data$SCOcat4)
+              Datazone@data$SCOcat4<-trimws(Datazone@data$SCOcat4)
+              Datazone@data$SCOcat4<-as.numeric(Datazone@data$SCOcat4)
+              
+              ## too slow load up from file- simplify-
+              # Datazone@data$LAid<-99
+              # LAoutline <- gUnaryUnion(Datazone, id = Datazone@data$LAid)
+              
+              ###################################################################################################################
+              ################## Urban Rural
+              add2<-read.csv(paste0("data/urbanrural.csv"))
+              UrbRur<-merge(add, add2, by.x="CODE", by.y="ï..Datazone2011")
+              UrbRur$UR6_2013_2014<-as.numeric(as.character(UrbRur$UR6_2013_2014))
+              UrbRurmean <-aggregate(UrbRur[,3], by=list(UrbRur$UR6_2013_2014), FUN=mean, na.rm=TRUE)
+              names(UrbRurmean)<-c("UR6_2013_2014", "UR6_2013_2014mean")
+              UrbRurCalc<-merge(UrbRurmean, UrbRur, by="UR6_2013_2014")
+              UrbRurCalc90<-aggregate(UrbRur[,3], by = list(UrbRur$UR6_2013_2014), FUN = function(x) quantile(x, probs = 0.90))
+              names(UrbRurCalc90)<-c("UR6_2013_2014", "UR6_2013_201490")
+              UrbRurCalc<-merge(UrbRurCalc, UrbRurCalc90, by="UR6_2013_2014")
+              
+              
+              ###############
+              UrbRurCalc$UrbRurcat[UrbRurCalc[,5]>=(UrbRurCalc$UR6_2013_2014mean-0.2*UrbRurCalc$UR6_2013_2014mean) & UrbRurCalc[,5]<=UrbRurCalc$UR6_2013_2014mean+(0.15*UrbRurCalc$UR6_2013_2014mean)]<-4
+              UrbRurCalc2<-subset(UrbRurCalc, UrbRurCalc[,5]<(UrbRurCalc$UR6_2013_2014mean-0.2*UrbRurCalc$UR6_2013_2014mean))
+              breaks5<-unique(quantile(UrbRurCalc2[,5], probs=0:3/3))
+              UrbRurCalc$UrbRurcat2<-ifelse(UrbRurCalc[,5]<(UrbRurCalc$UR6_2013_2014mean-0.2*UrbRurCalc$UR6_2013_2014mean), cut(UrbRurCalc[,5], unique(breaks5), include.lowest=TRUE, labels=FALSE), NA)
+              UrbRurCalc3<-subset(UrbRurCalc, UrbRurCalc[,5]>UrbRurCalc$UR6_2013_2014mean+(0.15*UrbRurCalc$UR6_2013_2014mean))
+              breaks6<-unique(quantile(UrbRurCalc3[,5], probs=0:3/3))
+              UrbRurCalc$UrbRurcat3<-ifelse(UrbRurCalc[,5]>UrbRurCalc$UR6_2013_2014mean+(0.15*UrbRurCalc$UR6_2013_2014mean), cut(UrbRurCalc[,5], unique(breaks6), include.lowest=TRUE, labels=FALSE), NA)
+              UrbRurCalc$UrbRurcat3[UrbRurCalc$UrbRurcat3==1]<-5
+              UrbRurCalc$UrbRurcat3[UrbRurCalc$UrbRurcat3==2]<-6
+              UrbRurCalc$UrbRurcat3[UrbRurCalc$UrbRurcat3==3]<-7
+              UrbRurCalc$UrbRurcat4<-paste(UrbRurCalc$UrbRurcat, UrbRurCalc$UrbRurcat2, UrbRurCalc$UrbRurcat3)
+              UrbRurCalc$UrbRurcat4<-trimws(UrbRurCalc$UrbRurcat4)
+              UrbRurCalc$UrbRurcat4<-sub("NA NA", "", UrbRurCalc$UrbRurcat4)
+              UrbRurCalc$UrbRurcat4<-sub(" NA", "", UrbRurCalc$UrbRurcat4)
+              UrbRurCalc$UrbRurcat4<-sub("NA ", "", UrbRurCalc$UrbRurcat4)
+              UrbRurCalc$UrbRurcat4<-trimws(UrbRurCalc$UrbRurcat4)
+              UrbRurCalc$UrbRurcat4<-as.numeric(UrbRurCalc$UrbRurcat4)
+              UrbRurCalcAdd<-subset(UrbRurCalc, select=c("CODE", "UrbRurcat4", "UR6_2013_2014mean", "UR6_2013_201490", "UR6_2013_2014"))
+              Datazone<-merge(Datazone, UrbRurCalcAdd,by.x="code", by.y="CODE")
+              
+              
+              ###################################################################################################################
+              ######################   SIMD
+              add4<-read.csv(paste0("data/SIMD.csv"))
+              SIMD<-merge(add, add4, by.x="CODE", by.y="Data_Zone")
+              SIMD$SIMDrank5<-as.numeric(quantcut(as.numeric(SIMD$Income_domain_2016_rank), 5))
+              SIMDmean <-aggregate(SIMD[,3], by=list(SIMD$SIMDrank5), FUN=mean, na.rm=TRUE)
+              names(SIMDmean)<-c("SIMDrank5", "SIMDmean")
+              SIMDCalc<-merge(SIMDmean, SIMD, by="SIMDrank5")
+              SIMDCalc90<-aggregate(SIMD[,3], by = list(SIMD$SIMDrank5), FUN = function(x) quantile(x, probs = 0.90))
+              names(SIMDCalc90)<-c("SIMDrank5", "SIMD90")
+              SIMDCalc<-merge(SIMDCalc, SIMDCalc90, by="SIMDrank5")
+              
+              
+              SIMDCalc$SIMDcat[SIMDCalc[,5]>=(SIMDCalc$SIMDmean-0.2*SIMDCalc$SIMDmean) & SIMDCalc[,5]<=SIMDCalc$SIMDmean+(0.15*SIMDCalc$SIMDmean)]<-4
+              SIMDCalc2<-subset(SIMDCalc, SIMDCalc[,5]<(SIMDCalc$SIMDmean-0.2*SIMDCalc$SIMDmean))
+              breaks5<-unique(quantile(SIMDCalc2[,5], probs=0:3/3))
+              SIMDCalc$SIMDcat2<-ifelse(SIMDCalc[,5]<(SIMDCalc$SIMDmean-0.2*SIMDCalc$SIMDmean), cut(SIMDCalc[,5], unique(breaks5), include.lowest=TRUE, labels=FALSE), NA)
+              SIMDCalc3<-subset(SIMDCalc, SIMDCalc[,5]>SIMDCalc$SIMDmean+(0.15*SIMDCalc$SIMDmean))
+              breaks6<-unique(quantile(SIMDCalc3[,5], probs=0:3/3))
+              SIMDCalc$SIMDcat3<-ifelse(SIMDCalc[,5]>SIMDCalc$SIMDmean+(0.15*SIMDCalc$SIMDmean), cut(SIMDCalc[,5], unique(breaks6), include.lowest=TRUE, labels=FALSE), NA)
+              SIMDCalc$SIMDcat3[SIMDCalc$SIMDcat3==1]<-5
+              SIMDCalc$SIMDcat3[SIMDCalc$SIMDcat3==2]<-6
+              SIMDCalc$SIMDcat3[SIMDCalc$SIMDcat3==3]<-7
+              SIMDCalc$SIMDcat4<-paste(SIMDCalc$SIMDcat, SIMDCalc$SIMDcat2, SIMDCalc$SIMDcat3)
+              SIMDCalc$SIMDcat4<-trimws(SIMDCalc$SIMDcat4)
+              SIMDCalc$SIMDcat4<-sub("NA NA", "", SIMDCalc$SIMDcat4)
+              SIMDCalc$SIMDcat4<-sub(" NA", "", SIMDCalc$SIMDcat4)
+              SIMDCalc$SIMDcat4<-sub("NA ", "", SIMDCalc$SIMDcat4)
+              SIMDCalc$SIMDcat4<-trimws(SIMDCalc$SIMDcat4)
+              SIMDCalc$SIMDcat4<-as.numeric(SIMDCalc$SIMDcat4)
+              SIMDCalcAdd<-subset(SIMDCalc, select=c("CODE", "SIMDcat4", "SIMDmean", "SIMD90", "SIMDrank5"))
+              Datazone<-merge(Datazone, SIMDCalcAdd,by.x="code", by.y="CODE")
+              
+              
+              
+              ############################# have to make the categories for LA AVERAGE #############################
+              LAmean<-mean(Datazone@data[,16])
+              LA90th<-quantile(Datazone@data[,16], c(.90)) 
+              # have to make the categories
+              Datazone@data$LAcat[Datazone@data[,16]>=(LAmean-0.2*LAmean) & Datazone@data[,16]<=LAmean+(0.15*LAmean)]<-4
+              Datazone2<-subset(Datazone, Datazone@data[,16]<(LAmean-0.2*LAmean))
+              breaks3<-unique(quantile(Datazone2@data[,16], probs=0:3/3))
+              if (length(breaks3)>1 ){
+                Datazone@data$LAcat2<-ifelse(Datazone@data[,16]<(LAmean-0.2*LAmean), cut(Datazone@data[,16], unique(breaks3), include.lowest=TRUE, labels=FALSE), NA)
+              } else {
+                Datazone@data$LAcat2[Datazone@data[,16]<(LAmean-0.2*LAmean)]<-1
+              }
+              Datazone3<-subset(Datazone, Datazone@data[,16]>LAmean+(0.15*LAmean))
+              breaks4<-unique(quantile(Datazone3@data[,16], probs=0:3/3))
+              if (length(breaks4)>1){
+                Datazone@data$LAcat3<-ifelse(Datazone@data[,16]>LAmean+(0.15*LAmean), cut(Datazone@data[,16], unique(breaks4), include.lowest=TRUE, labels=FALSE), NA)
+              } else {   Datazone@data$LAcat3<-1
+              }
+              Datazone@data$LAcat3[Datazone@data$LAcat3==1]<-5
+              Datazone@data$LAcat3[Datazone@data$LAcat3==2]<-6
+              Datazone@data$LAcat3[Datazone@data$LAcat3==3]<-7
+              Datazone@data$LAcat4<-paste(Datazone@data$LAcat, Datazone@data$LAcat2, Datazone@data$LAcat3)
+              Datazone@data$LAcat4<-trimws(Datazone@data$LAcat4)
+              Datazone@data$LAcat4<-sub("NA NA", "", Datazone@data$LAcat4)
+              Datazone@data$LAcat4<-sub(" NA", "", Datazone@data$LAcat4)
+              Datazone@data$LAcat4<-sub("NA ", "", Datazone@data$LAcat4)
+              Datazone@data$LAcat4<-trimws(Datazone@data$LAcat4)
+              Datazone@data$LAcat4<-as.numeric(Datazone@data$LAcat4)
+              ###################################################################################################################    
+              
+              
+              
+              if(input$comparison=="SCO"){
+                pal <- colorNumeric(c("#5d8bba", "#ffffe5", "#d73027"), 1:7)   
                 
-                #addPolygons(data=LAoutline,
-                #            stroke=T,
-                #            weight=3,
-                #            color= "black",
-                #            fillOpacity = 0) #%>%
+                ### superscript in leaflet
                 
-                addPolygons(data=Datazone,
-                            stroke=T,
-                            weight=0.3,
-                            smoothFactor = 0.2,
-                            fillOpacity = 0.62,
-                            popup=popup,
-                            color= ~pal(SCOcat4),
-                            highlightOptions = highlightOptions(color = "black", weight = 3,
-                                                                bringToFront = TRUE)) %>%
-                addMarkers(data=map2, ~long, ~lat)
-            }
-            else if(input$comparison=="LA"){
-              pal <- colorNumeric(c("#5d8bba", "#ffffe5", "#d73027"), 1:7)   
-              
-              popup <- paste0("<h3>", Datazone$name, "</h3><br>",
-                              "Density around the population centre is ", "<strong>", round(Datazone@data[,16], 2)," per km2","</strong>",
-                              "<br/>",
-                              "This is <strong>", round((Datazone@data[,16]/LAmean*100),0), ifelse(round(Datazone@data[,16], 2)>round(LAmean, 2) ,"% higher than</strong>", "%</strong> of")," the ", input$LAinput, " average",
-                              "<br/>",
-                              ifelse(Datazone@data[,16]>LA90th, paste0("<strong><font color='#EE2C2C'>This datazone is in the top 10% of neighbourhoods in ", input$LAinput, "</font></strong>"), ""),
-                              "<br/>",
-                              "<br/>",
-                              " More information available on this datazone ", "<b><a target='_blank' href='http://statistics.gov.scot/doc/statistical-geography/", Datazone$code,"'>here</a></b>")
-              
-              mapit  %>%     
-                addPolygons(data=Datazone,
-                            stroke=TRUE,
-                            weight=0.1,
-                            smoothFactor = 0.2,
-                            fillOpacity = 0.62,
-                            popup=popup,
-                            color= ~pal(LAcat4),
-                            highlightOptions = highlightOptions(color = "black", weight = 3,
-                                                                bringToFront = TRUE)) 
-              
-            }
-            else if(input$comparison=="URBRUR"){
-              pal <- colorNumeric(c("#5d8bba", "#ffffe5", "#d73027"), 1:7)   
-              
-              popup <- paste0("<h3>", Datazone$name, "</h3><br>",
-                              "Density around the population centre is ", "<strong>", round(Datazone@data[,16], 2)," per km2","</strong>",
-                              "<br/>",
-                              "This is <strong>", round((Datazone@data[,16]/Datazone$UR6_2013_2014mean*100),0), ifelse(round(Datazone@data[,16], 2)>round(Datazone$UR6_2013_2014mean, 2) ,"% higher than</strong>", "%</strong> of")," the Urban Rural Classification (6-Fold) Group ", Datazone$UR6_2013_2014, " average",
-                              "<br/>",
-                              ifelse(Datazone@data[,16]>Datazone$UR6_2013_201490, paste0("<strong><font color='#EE2C2C'>This datazone is in the top 10% of neighbourhoods in the Urban Rural Classification (6-Fold) Group ", Datazone$UR6_2013_2014, "</font></strong>"), ""),
-                              "<br/>",
-                              "<br/>",
-                              " More information available on this datazone ", "<b><a target='_blank' href='http://statistics.gov.scot/doc/statistical-geography/", Datazone$code,"'>here</a></b>")
-              
-              
-              mapit %>% 
-                #addPolygons(data=LAoutline,
-                #            stroke=T,
-                #            weight=3,
-                #            color= "black",
-                #            fillOpacity = 0) #%>%
+                popup <- paste0("<h3>", Datazone$name, "</h3><br>",
+                                "Density around the population centre is ", "<strong>", round(Datazone@data[,16], 2)," per km2","</strong>",
+                                "<br/>",
+                                "This is <strong>", round((Datazone@data[,16]/Datazone$Scottishaverage*100),0), ifelse(round(Datazone@data[,16], 2)>round(Datazone$Scottishaverage, 2) ,"% higher</strong> than", "%</strong> of")," the Scottish average",
+                                "<br/>",
+                                ifelse(Datazone@data[,16]>Scottish90th, "<strong><font color='#EE2C2C'>This datazone is in the top 10% of neighbourhoods in Scotland</font></strong>", ""),
+                                "<br/>",
+                                "<br/>",
+                                " More information available on this datazone ", "<b><a target='_blank' href='http://statistics.gov.scot/doc/statistical-geography/", Datazone$code,"'>here</a></b>")
                 
-                addPolygons(data=Datazone,
-                            stroke=TRUE,
-                            weight=0.1,
-                            smoothFactor = 0.2,
-                            fillOpacity = 0.62,
-                            popup=popup,
-                            color= ~pal(UrbRurcat4),
-                            highlightOptions = highlightOptions(color = "black", weight = 3,
-                                                                bringToFront = TRUE)) 
-              
-            }
-            else if(input$comparison=="SIMD"){
-              pal <- colorNumeric(c("#5d8bba", "#ffffe5", "#d73027"), 1:7)   
-              
-              ### superscript in leaflet
-              popup <- paste0("<h3>", Datazone$name, "</h3><br>",
-                              "Density around the population centre is ", "<strong>", round(Datazone@data[,16], 2)," per km2","</strong>",
-                              "<br/>",
-                              "This is <strong>", round((Datazone@data[,16]/Datazone$SIMDmean*100),0), ifelse(round(Datazone@data[,16], 2)>round(Datazone$SIMDmean, 2) ,"% higher than</strong>", "% of</strong>")," the Scottish Index of Multiple Deprivation Quintile Group ", Datazone$SIMDrank5, " average",
-                              "<br/>",
-                              ifelse(Datazone@data[,16]>Datazone$SIMD90, paste0("<strong><font color='#EE2C2C'>This datazone is in the top 10% of neighbourhoods in the Scottish Index of Multiple Deprivation Quintile Group ", Datazone$SIMDrank5, "</font></strong>"), ""),
-                              "<br/>",
-                              "<br/>",
-                              " More information available on this datazone ", "<b><a target='_blank' href='http://statistics.gov.scot/doc/statistical-geography/", Datazone$code,"'>here</a></b>")
-              
-              #####################
-              mapit  %>%
-                #addPolygons(data=LAoutline,
-                #            stroke=T,
-                #            weight=3,
-                #            color= "black",
-                #            fillOpacity = 0) #%>%
+                #################
+                mapit  %>%
+                  
+                  #addPolygons(data=LAoutline,
+                  #            stroke=T,
+                  #            weight=3,
+                  #            color= "black",
+                  #            fillOpacity = 0) #%>%
+                  
+                  addPolygons(data=Datazone,
+                              stroke=T,
+                              weight=0.3,
+                              smoothFactor = 0.2,
+                              fillOpacity = 0.62,
+                              popup=popup,
+                              color= ~pal(SCOcat4),
+                              highlightOptions = highlightOptions(color = "black", weight = 3,
+                                                                  bringToFront = TRUE)) %>%
+                  addMarkers(data=map2, ~long, ~lat)
+              }
+              else if(input$comparison=="LA"){
+                pal <- colorNumeric(c("#5d8bba", "#ffffe5", "#d73027"), 1:7)   
                 
-                addPolygons(data=Datazone,
-                            stroke=TRUE,
-                            weight=0.1,
-                            smoothFactor = 0.2,
-                            fillOpacity = 0.62,
-                            popup=popup,
-                            color= ~pal(SIMDcat4),
-                            highlightOptions = highlightOptions(color = "black", weight = 3,
-                                                                bringToFront = TRUE)) 
-              
+                popup <- paste0("<h3>", Datazone$name, "</h3><br>",
+                                "Density around the population centre is ", "<strong>", round(Datazone@data[,16], 2)," per km2","</strong>",
+                                "<br/>",
+                                "This is <strong>", round((Datazone@data[,16]/LAmean*100),0), ifelse(round(Datazone@data[,16], 2)>round(LAmean, 2) ,"% higher than</strong>", "%</strong> of")," the ", input$LAinput, " average",
+                                "<br/>",
+                                ifelse(Datazone@data[,16]>LA90th, paste0("<strong><font color='#EE2C2C'>This datazone is in the top 10% of neighbourhoods in ", input$LAinput, "</font></strong>"), ""),
+                                "<br/>",
+                                "<br/>",
+                                " More information available on this datazone ", "<b><a target='_blank' href='http://statistics.gov.scot/doc/statistical-geography/", Datazone$code,"'>here</a></b>")
+                
+                mapit  %>%     
+                  addPolygons(data=Datazone,
+                              stroke=TRUE,
+                              weight=0.1,
+                              smoothFactor = 0.2,
+                              fillOpacity = 0.62,
+                              popup=popup,
+                              color= ~pal(LAcat4),
+                              highlightOptions = highlightOptions(color = "black", weight = 3,
+                                                                  bringToFront = TRUE)) 
+                
+              }
+              else if(input$comparison=="URBRUR"){
+                pal <- colorNumeric(c("#5d8bba", "#ffffe5", "#d73027"), 1:7)   
+                
+                popup <- paste0("<h3>", Datazone$name, "</h3><br>",
+                                "Density around the population centre is ", "<strong>", round(Datazone@data[,16], 2)," per km2","</strong>",
+                                "<br/>",
+                                "This is <strong>", round((Datazone@data[,16]/Datazone$UR6_2013_2014mean*100),0), ifelse(round(Datazone@data[,16], 2)>round(Datazone$UR6_2013_2014mean, 2) ,"% higher than</strong>", "%</strong> of")," the Urban Rural Classification (6-Fold) Group ", Datazone$UR6_2013_2014, " average",
+                                "<br/>",
+                                ifelse(Datazone@data[,16]>Datazone$UR6_2013_201490, paste0("<strong><font color='#EE2C2C'>This datazone is in the top 10% of neighbourhoods in the Urban Rural Classification (6-Fold) Group ", Datazone$UR6_2013_2014, "</font></strong>"), ""),
+                                "<br/>",
+                                "<br/>",
+                                " More information available on this datazone ", "<b><a target='_blank' href='http://statistics.gov.scot/doc/statistical-geography/", Datazone$code,"'>here</a></b>")
+                
+                
+                mapit %>% 
+                  #addPolygons(data=LAoutline,
+                  #            stroke=T,
+                  #            weight=3,
+                  #            color= "black",
+                  #            fillOpacity = 0) #%>%
+                  
+                  addPolygons(data=Datazone,
+                              stroke=TRUE,
+                              weight=0.1,
+                              smoothFactor = 0.2,
+                              fillOpacity = 0.62,
+                              popup=popup,
+                              color= ~pal(UrbRurcat4),
+                              highlightOptions = highlightOptions(color = "black", weight = 3,
+                                                                  bringToFront = TRUE)) 
+                
+              }
+              else if(input$comparison=="SIMD"){
+                pal <- colorNumeric(c("#5d8bba", "#ffffe5", "#d73027"), 1:7)   
+                
+                ### superscript in leaflet
+                popup <- paste0("<h3>", Datazone$name, "</h3><br>",
+                                "Density around the population centre is ", "<strong>", round(Datazone@data[,16], 2)," per km2","</strong>",
+                                "<br/>",
+                                "This is <strong>", round((Datazone@data[,16]/Datazone$SIMDmean*100),0), ifelse(round(Datazone@data[,16], 2)>round(Datazone$SIMDmean, 2) ,"% higher than</strong>", "% of</strong>")," the Scottish Index of Multiple Deprivation Quintile Group ", Datazone$SIMDrank5, " average",
+                                "<br/>",
+                                ifelse(Datazone@data[,16]>Datazone$SIMD90, paste0("<strong><font color='#EE2C2C'>This datazone is in the top 10% of neighbourhoods in the Scottish Index of Multiple Deprivation Quintile Group ", Datazone$SIMDrank5, "</font></strong>"), ""),
+                                "<br/>",
+                                "<br/>",
+                                " More information available on this datazone ", "<b><a target='_blank' href='http://statistics.gov.scot/doc/statistical-geography/", Datazone$code,"'>here</a></b>")
+                
+                #####################
+                mapit  %>%
+                  #addPolygons(data=LAoutline,
+                  #            stroke=T,
+                  #            weight=3,
+                  #            color= "black",
+                  #            fillOpacity = 0) #%>%
+                  
+                  addPolygons(data=Datazone,
+                              stroke=TRUE,
+                              weight=0.1,
+                              smoothFactor = 0.2,
+                              fillOpacity = 0.62,
+                              popup=popup,
+                              color= ~pal(SIMDcat4),
+                              highlightOptions = highlightOptions(color = "black", weight = 3,
+                                                                  bringToFront = TRUE)) 
+                
+              }
             }
           }
+          )}
+        
+        
+        else{
+          mapit <- leafletProxy("map") %>% clearShapes() %>%clearMarkers() %>% setView(lng =-4.2026, lat = 56.4907, zoom = 7) 
         }
-        )}
+      })  
       
-      
-      else{
-        mapit <- leafletProxy("map") %>% clearShapes() %>%clearMarkers() %>% setView(lng =-4.2026, lat = 56.4907, zoom = 7) 
-      }
-    })  
-  })
-  
-  observe({
-    if (!is.na(location2)){
-      mapit  %>% clearShapes() 
-      Datazone<-readRDS(paste0("geography/DZ/la/", trimws(location2), ".rds"))
-      Datazone <- spTransform(Datazone, CRS("+proj=longlat +datum=WGS84"))
-      # Datazone2 is the datazone location
-      Datazone2 <- Datazone[location[1,2], ]
-      buffer<-gBuffer(map, width = 3000)
-      buffer<-spTransform(buffer, proj4string(Datazone))
-      Datazone3 <-gIntersects(Datazone, buffer, byid = T)
-      Datazone3<- as.data.frame(t(Datazone3))
-      Datazone@data <-cbind(Datazone@data, Datazone3)
-      Datazone<-Datazone[Datazone@data$buffer==T, ]
-      
-      
-      ### get the data in
-      data <- as.character(paste0(input$buffer, input$datatype, input$year, ".csv"))
-      add<-read.csv(paste0("data/output/",data))
-      Scotlandmean<-mean(add[,3])
-      Datazone$Scottishaverage<-Scotlandmean
-      Scottish90th<-quantile(add[,3], c(.90)) 
-      add$CODE<-trimws(add$CODE)
-      Datazone<-merge(Datazone, add, by.x="datazone", by.y="CODE")
-      Datazone$stdareaha<-NULL
-      Datazone$stdareakm2<-NULL
-      Datazone$shape_leng<-NULL
-      
-      #### Mulitple options- generate variable that is scottish average
-      ############################# have to make the categories for SCOTTISH AVERAGE #############################
-      
-      Datazone@data$SCOcat[Datazone@data[,16]>=(Scotlandmean-0.2*Scotlandmean) & Datazone@data[,16]<=Scotlandmean+(0.15*Scotlandmean)]<-4
-      Datazone2<-subset(Datazone, Datazone@data[,16]<(Scotlandmean-0.2*Scotlandmean))
-      breaks1<-unique(quantile(Datazone2@data[,16], probs=0:3/3))
-      Datazone@data$SCOcat2<-ifelse(Datazone@data[,16]<(Scotlandmean-0.2*Scotlandmean), cut(Datazone@data[,16], unique(breaks1), include.lowest=TRUE, labels=FALSE), NA)
-      Datazone3<-subset(Datazone, Datazone@data[,16]>Scotlandmean+(0.15*Scotlandmean))
-      breaks2<-unique(quantile(Datazone3@data[,16], probs=0:3/3))
-      Datazone@data$SCOcat3<-ifelse(Datazone@data[,16]>Scotlandmean+(0.15*Scotlandmean), cut(Datazone@data[,16], unique(breaks2), include.lowest=TRUE, labels=FALSE), NA)
-      Datazone@data$SCOcat3[Datazone@data$SCOcat3==1]<-5
-      Datazone@data$SCOcat3[Datazone@data$SCOcat3==2]<-6
-      Datazone@data$SCOcat3[Datazone@data$SCOcat3==3]<-7
-      Datazone@data$SCOcat4<-paste(Datazone@data$SCOcat, Datazone@data$SCOcat2, Datazone@data$SCOcat3)
-      Datazone@data$SCOcat4<-trimws(Datazone@data$SCOcat4)
-      Datazone@data$SCOcat4<-sub("NA NA", "", Datazone@data$SCOcat4)
-      Datazone@data$SCOcat4<-sub(" NA", "", Datazone@data$SCOcat4)
-      Datazone@data$SCOcat4<-sub("NA ", "", Datazone@data$SCOcat4)
-      Datazone@data$SCOcat4<-trimws(Datazone@data$SCOcat4)
-      Datazone@data$SCOcat4<-as.numeric(Datazone@data$SCOcat4)
-      
-      ## too slow load up from file- simplify-
-      # Datazone@data$LAid<-99
-      # LAoutline <- gUnaryUnion(Datazone, id = Datazone@data$LAid)
-      
-      ###################################################################################################################
-      ################## Urban Rural
-      add2<-read.csv(paste0("data/urbanrural.csv"))
-      UrbRur<-merge(add, add2, by.x="CODE", by.y="Datazone2011")
-      UrbRur$UR6_2013_2014<-as.numeric(as.character(UrbRur$UR6_2013_2014))
-      UrbRurmean <-aggregate(UrbRur[,3], by=list(UrbRur$UR6_2013_2014), FUN=mean, na.rm=TRUE)
-      names(UrbRurmean)<-c("UR6_2013_2014", "UR6_2013_2014mean")
-      UrbRurCalc<-merge(UrbRurmean, UrbRur, by="UR6_2013_2014")
-      UrbRurCalc90<-aggregate(UrbRur[,3], by = list(UrbRur$UR6_2013_2014), FUN = function(x) quantile(x, probs = 0.90))
-      names(UrbRurCalc90)<-c("UR6_2013_2014", "UR6_2013_201490")
-      UrbRurCalc<-merge(UrbRurCalc, UrbRurCalc90, by="UR6_2013_2014")
-      
-      
-      ###############
-      UrbRurCalc$UrbRurcat[UrbRurCalc[,5]>=(UrbRurCalc$UR6_2013_2014mean-0.2*UrbRurCalc$UR6_2013_2014mean) & UrbRurCalc[,5]<=UrbRurCalc$UR6_2013_2014mean+(0.15*UrbRurCalc$UR6_2013_2014mean)]<-4
-      UrbRurCalc2<-subset(UrbRurCalc, UrbRurCalc[,5]<(UrbRurCalc$UR6_2013_2014mean-0.2*UrbRurCalc$UR6_2013_2014mean))
-      breaks5<-unique(quantile(UrbRurCalc2[,5], probs=0:3/3))
-      UrbRurCalc$UrbRurcat2<-ifelse(UrbRurCalc[,5]<(UrbRurCalc$UR6_2013_2014mean-0.2*UrbRurCalc$UR6_2013_2014mean), cut(UrbRurCalc[,5], unique(breaks5), include.lowest=TRUE, labels=FALSE), NA)
-      UrbRurCalc3<-subset(UrbRurCalc, UrbRurCalc[,5]>UrbRurCalc$UR6_2013_2014mean+(0.15*UrbRurCalc$UR6_2013_2014mean))
-      breaks6<-unique(quantile(UrbRurCalc3[,5], probs=0:3/3))
-      UrbRurCalc$UrbRurcat3<-ifelse(UrbRurCalc[,5]>UrbRurCalc$UR6_2013_2014mean+(0.15*UrbRurCalc$UR6_2013_2014mean), cut(UrbRurCalc[,5], unique(breaks6), include.lowest=TRUE, labels=FALSE), NA)
-      UrbRurCalc$UrbRurcat3[UrbRurCalc$UrbRurcat3==1]<-5
-      UrbRurCalc$UrbRurcat3[UrbRurCalc$UrbRurcat3==2]<-6
-      UrbRurCalc$UrbRurcat3[UrbRurCalc$UrbRurcat3==3]<-7
-      UrbRurCalc$UrbRurcat4<-paste(UrbRurCalc$UrbRurcat, UrbRurCalc$UrbRurcat2, UrbRurCalc$UrbRurcat3)
-      UrbRurCalc$UrbRurcat4<-trimws(UrbRurCalc$UrbRurcat4)
-      UrbRurCalc$UrbRurcat4<-sub("NA NA", "", UrbRurCalc$UrbRurcat4)
-      UrbRurCalc$UrbRurcat4<-sub(" NA", "", UrbRurCalc$UrbRurcat4)
-      UrbRurCalc$UrbRurcat4<-sub("NA ", "", UrbRurCalc$UrbRurcat4)
-      UrbRurCalc$UrbRurcat4<-trimws(UrbRurCalc$UrbRurcat4)
-      UrbRurCalc$UrbRurcat4<-as.numeric(UrbRurCalc$UrbRurcat4)
-      UrbRurCalcAdd<-subset(UrbRurCalc, select=c("CODE", "UrbRurcat4", "UR6_2013_2014mean", "UR6_2013_201490", "UR6_2013_2014"))
-      Datazone<-merge(Datazone, UrbRurCalcAdd,by.x="code", by.y="CODE")
-      
-      
-      ###################################################################################################################
-      ######################   SIMD
-      add4<-read.csv(paste0("data/SIMD.csv"))
-      SIMD<-merge(add, add4, by.x="CODE", by.y="Data_Zone")
-      SIMD$SIMDrank5<-as.numeric(quantcut(as.numeric(SIMD$Income_domain_2016_rank), 5))
-      SIMDmean <-aggregate(SIMD[,3], by=list(SIMD$SIMDrank5), FUN=mean, na.rm=TRUE)
-      names(SIMDmean)<-c("SIMDrank5", "SIMDmean")
-      SIMDCalc<-merge(SIMDmean, SIMD, by="SIMDrank5")
-      SIMDCalc90<-aggregate(SIMD[,3], by = list(SIMD$SIMDrank5), FUN = function(x) quantile(x, probs = 0.90))
-      names(SIMDCalc90)<-c("SIMDrank5", "SIMD90")
-      SIMDCalc<-merge(SIMDCalc, SIMDCalc90, by="SIMDrank5")
-      
-      
-      SIMDCalc$SIMDcat[SIMDCalc[,5]>=(SIMDCalc$SIMDmean-0.2*SIMDCalc$SIMDmean) & SIMDCalc[,5]<=SIMDCalc$SIMDmean+(0.15*SIMDCalc$SIMDmean)]<-4
-      SIMDCalc2<-subset(SIMDCalc, SIMDCalc[,5]<(SIMDCalc$SIMDmean-0.2*SIMDCalc$SIMDmean))
-      breaks5<-unique(quantile(SIMDCalc2[,5], probs=0:3/3))
-      SIMDCalc$SIMDcat2<-ifelse(SIMDCalc[,5]<(SIMDCalc$SIMDmean-0.2*SIMDCalc$SIMDmean), cut(SIMDCalc[,5], unique(breaks5), include.lowest=TRUE, labels=FALSE), NA)
-      SIMDCalc3<-subset(SIMDCalc, SIMDCalc[,5]>SIMDCalc$SIMDmean+(0.15*SIMDCalc$SIMDmean))
-      breaks6<-unique(quantile(SIMDCalc3[,5], probs=0:3/3))
-      SIMDCalc$SIMDcat3<-ifelse(SIMDCalc[,5]>SIMDCalc$SIMDmean+(0.15*SIMDCalc$SIMDmean), cut(SIMDCalc[,5], unique(breaks6), include.lowest=TRUE, labels=FALSE), NA)
-      SIMDCalc$SIMDcat3[SIMDCalc$SIMDcat3==1]<-5
-      SIMDCalc$SIMDcat3[SIMDCalc$SIMDcat3==2]<-6
-      SIMDCalc$SIMDcat3[SIMDCalc$SIMDcat3==3]<-7
-      SIMDCalc$SIMDcat4<-paste(SIMDCalc$SIMDcat, SIMDCalc$SIMDcat2, SIMDCalc$SIMDcat3)
-      SIMDCalc$SIMDcat4<-trimws(SIMDCalc$SIMDcat4)
-      SIMDCalc$SIMDcat4<-sub("NA NA", "", SIMDCalc$SIMDcat4)
-      SIMDCalc$SIMDcat4<-sub(" NA", "", SIMDCalc$SIMDcat4)
-      SIMDCalc$SIMDcat4<-sub("NA ", "", SIMDCalc$SIMDcat4)
-      SIMDCalc$SIMDcat4<-trimws(SIMDCalc$SIMDcat4)
-      SIMDCalc$SIMDcat4<-as.numeric(SIMDCalc$SIMDcat4)
-      SIMDCalcAdd<-subset(SIMDCalc, select=c("CODE", "SIMDcat4", "SIMDmean", "SIMD90", "SIMDrank5"))
-      Datazone<-merge(Datazone, SIMDCalcAdd,by.x="code", by.y="CODE")
-      
-      
-      
-      ############################# have to make the categories for LA AVERAGE #############################
-      LAmean<-mean(Datazone@data[,16])
-      LA90th<-quantile(Datazone@data[,16], c(.90)) 
-      # have to make the categories
-      Datazone@data$LAcat[Datazone@data[,16]>=(LAmean-0.2*LAmean) & Datazone@data[,16]<=LAmean+(0.15*LAmean)]<-4
-      Datazone2<-subset(Datazone, Datazone@data[,16]<(LAmean-0.2*LAmean))
-      breaks3<-unique(quantile(Datazone2@data[,16], probs=0:3/3))
-      if (length(breaks3)>1 ){
-        Datazone@data$LAcat2<-ifelse(Datazone@data[,16]<(LAmean-0.2*LAmean), cut(Datazone@data[,16], unique(breaks3), include.lowest=TRUE, labels=FALSE), NA)
-      } else {
-        Datazone@data$LAcat2[Datazone@data[,16]<(LAmean-0.2*LAmean)]<-1
-      }
-      Datazone3<-subset(Datazone, Datazone@data[,16]>LAmean+(0.15*LAmean))
-      breaks4<-unique(quantile(Datazone3@data[,16], probs=0:3/3))
-      if (length(breaks4)>1){
-        Datazone@data$LAcat3<-ifelse(Datazone@data[,16]>LAmean+(0.15*LAmean), cut(Datazone@data[,16], unique(breaks4), include.lowest=TRUE, labels=FALSE), NA)
-      } else {   Datazone@data$LAcat3<-1
-      }
-      Datazone@data$LAcat3[Datazone@data$LAcat3==1]<-5
-      Datazone@data$LAcat3[Datazone@data$LAcat3==2]<-6
-      Datazone@data$LAcat3[Datazone@data$LAcat3==3]<-7
-      Datazone@data$LAcat4<-paste(Datazone@data$LAcat, Datazone@data$LAcat2, Datazone@data$LAcat3)
-      Datazone@data$LAcat4<-trimws(Datazone@data$LAcat4)
-      Datazone@data$LAcat4<-sub("NA NA", "", Datazone@data$LAcat4)
-      Datazone@data$LAcat4<-sub(" NA", "", Datazone@data$LAcat4)
-      Datazone@data$LAcat4<-sub("NA ", "", Datazone@data$LAcat4)
-      Datazone@data$LAcat4<-trimws(Datazone@data$LAcat4)
-      Datazone@data$LAcat4<-as.numeric(Datazone@data$LAcat4)
-      ###################################################################################################################    
-      
-      
-      
-      if(input$comparison=="SCO"){
-        pal <- colorNumeric(c("#5d8bba", "#ffffe5", "#d73027"), 1:7)   
-        
-        ### superscript in leaflet
-        
-        popup <- paste0("<h3>", Datazone$name, "</h3><br>",
-                        "Density around the population centre is ", "<strong>", round(Datazone@data[,16], 2)," per km2","</strong>",
-                        "<br/>",
-                        "This is <strong>", round((Datazone@data[,16]/Datazone$Scottishaverage*100),0), ifelse(round(Datazone@data[,16], 2)>round(Datazone$Scottishaverage, 2) ,"% higher</strong> than", "%</strong> of")," the Scottish average",
-                        "<br/>",
-                        ifelse(Datazone@data[,16]>Scottish90th, "<strong><font color='#EE2C2C'>This datazone is in the top 10% of neighbourhoods in Scotland</font></strong>", ""),
-                        "<br/>",
-                        "<br/>",
-                        " More information available on this datazone ", "<b><a target='_blank' href='http://statistics.gov.scot/doc/statistical-geography/", Datazone$code,"'>here</a></b>")
-        
-        #################
-        mapit  %>%
+      observe({
+        if (!is.na(location2)){
+          mapit  %>% clearShapes() 
+          Datazone<-readRDS(paste0("geography/DZ/la/", trimws(location2), ".rds"))
+          Datazone <- spTransform(Datazone, CRS("+proj=longlat +datum=WGS84"))
+          # Datazone2 is the datazone location
+          Datazone2 <- Datazone[location[1,2], ]
+          buffer<-gBuffer(map, width = 3000)
+          buffer<-spTransform(buffer, proj4string(Datazone))
+          Datazone3 <-gIntersects(Datazone, buffer, byid = T)
+          Datazone3<- as.data.frame(t(Datazone3))
+          Datazone@data <-cbind(Datazone@data, Datazone3)
+          Datazone<-Datazone[Datazone@data$buffer==T, ]
           
-          #addPolygons(data=LAoutline,
-          #            stroke=T,
-          #            weight=3,
-          #            color= "black",
-          #            fillOpacity = 0) #%>%
           
-          addPolygons(data=Datazone,
-                      stroke=T,
-                      weight=0.3,
-                      smoothFactor = 0.2,
-                      fillOpacity = 0.62,
-                      popup=popup,
-                      color= ~pal(SCOcat4),
-                      highlightOptions = highlightOptions(color = "black", weight = 3,
-                                                          bringToFront = TRUE)) %>%
-          addMarkers(data=map2, ~long, ~lat)
-      }
-      else if(input$comparison=="LA"){
-        pal <- colorNumeric(c("#5d8bba", "#ffffe5", "#d73027"), 1:7)   
-        
-        popup <- paste0("<h3>", Datazone$name, "</h3><br>",
-                        "Density around the population centre is ", "<strong>", round(Datazone@data[,16], 2)," per km2","</strong>",
-                        "<br/>",
-                        "This is <strong>", round((Datazone@data[,16]/LAmean*100),0), ifelse(round(Datazone@data[,16], 2)>round(LAmean, 2) ,"% higher than</strong>", "%</strong> of")," the ", input$LAinput, " average",
-                        "<br/>",
-                        ifelse(Datazone@data[,16]>LA90th, paste0("<strong><font color='#EE2C2C'>This datazone is in the top 10% of neighbourhoods in ", input$LAinput, "</font></strong>"), ""),
-                        "<br/>",
-                        "<br/>",
-                        " More information available on this datazone ", "<b><a target='_blank' href='http://statistics.gov.scot/doc/statistical-geography/", Datazone$code,"'>here</a></b>")
-        
-        mapit  %>%     
-          addPolygons(data=Datazone,
-                      stroke=TRUE,
-                      weight=0.1,
-                      smoothFactor = 0.2,
-                      fillOpacity = 0.62,
-                      popup=popup,
-                      color= ~pal(LAcat4),
-                      highlightOptions = highlightOptions(color = "black", weight = 3,
-                                                          bringToFront = TRUE)) 
-        
-      }
-      else if(input$comparison=="URBRUR"){
-        pal <- colorNumeric(c("#5d8bba", "#ffffe5", "#d73027"), 1:7)   
-        
-        popup <- paste0("<h3>", Datazone$name, "</h3><br>",
-                        "Density around the population centre is ", "<strong>", round(Datazone@data[,16], 2)," per km2","</strong>",
-                        "<br/>",
-                        "This is <strong>", round((Datazone@data[,16]/Datazone$UR6_2013_2014mean*100),0), ifelse(round(Datazone@data[,16], 2)>round(Datazone$UR6_2013_2014mean, 2) ,"% higher than</strong>", "%</strong> of")," the Urban Rural Classification (6-Fold) Group ", Datazone$UR6_2013_2014, " average",
-                        "<br/>",
-                        ifelse(Datazone@data[,16]>Datazone$UR6_2013_201490, paste0("<strong><font color='#EE2C2C'>This datazone is in the top 10% of neighbourhoods in the Urban Rural Classification (6-Fold) Group ", Datazone$UR6_2013_2014, "</font></strong>"), ""),
-                        "<br/>",
-                        "<br/>",
-                        " More information available on this datazone ", "<b><a target='_blank' href='http://statistics.gov.scot/doc/statistical-geography/", Datazone$code,"'>here</a></b>")
-        
-        
-        mapit %>% 
-          #addPolygons(data=LAoutline,
-          #            stroke=T,
-          #            weight=3,
-          #            color= "black",
-          #            fillOpacity = 0) #%>%
+          ### get the data in
+          data <- as.character(paste0(input$buffer, input$datatype, input$year, ".csv"))
+          add<-read.csv(paste0("data/output/",data))
+          Scotlandmean<-mean(add[,3])
+          Datazone$Scottishaverage<-Scotlandmean
+          Scottish90th<-quantile(add[,3], c(.90)) 
+          add$CODE<-trimws(add$CODE)
+          Datazone<-merge(Datazone, add, by.x="datazone", by.y="CODE")
+          Datazone$stdareaha<-NULL
+          Datazone$stdareakm2<-NULL
+          Datazone$shape_leng<-NULL
           
-          addPolygons(data=Datazone,
-                      stroke=TRUE,
-                      weight=0.1,
-                      smoothFactor = 0.2,
-                      fillOpacity = 0.62,
-                      popup=popup,
-                      color= ~pal(UrbRurcat4),
-                      highlightOptions = highlightOptions(color = "black", weight = 3,
-                                                          bringToFront = TRUE)) 
-        
-      }
-      else if(input$comparison=="SIMD"){
-        pal <- colorNumeric(c("#5d8bba", "#ffffe5", "#d73027"), 1:7)   
-        
-        ### superscript in leaflet
-        popup <- paste0("<h3>", Datazone$name, "</h3><br>",
-                        "Density around the population centre is ", "<strong>", round(Datazone@data[,16], 2)," per km2","</strong>",
-                        "<br/>",
-                        "This is <strong>", round((Datazone@data[,16]/Datazone$SIMDmean*100),0), ifelse(round(Datazone@data[,16], 2)>round(Datazone$SIMDmean, 2) ,"% higher than</strong>", "% of</strong>")," the Scottish Index of Multiple Deprivation Quintile Group ", Datazone$SIMDrank5, " average",
-                        "<br/>",
-                        ifelse(Datazone@data[,16]>Datazone$SIMD90, paste0("<strong><font color='#EE2C2C'>This datazone is in the top 10% of neighbourhoods in the Scottish Index of Multiple Deprivation Quintile Group ", Datazone$SIMDrank5, "</font></strong>"), ""),
-                        "<br/>",
-                        "<br/>",
-                        " More information available on this datazone ", "<b><a target='_blank' href='http://statistics.gov.scot/doc/statistical-geography/", Datazone$code,"'>here</a></b>")
-        
-        #####################
-        mapit  %>%
-          #addPolygons(data=LAoutline,
-          #            stroke=T,
-          #            weight=3,
-          #            color= "black",
-          #            fillOpacity = 0) #%>%
+          #### Mulitple options- generate variable that is scottish average
+          ############################# have to make the categories for SCOTTISH AVERAGE #############################
           
-          addPolygons(data=Datazone,
-                      stroke=TRUE,
-                      weight=0.1,
-                      smoothFactor = 0.2,
-                      fillOpacity = 0.62,
-                      popup=popup,
-                      color= ~pal(SIMDcat4),
-                      highlightOptions = highlightOptions(color = "black", weight = 3,
-                                                          bringToFront = TRUE)) 
-        
+          Datazone@data$SCOcat[Datazone@data[,16]>=(Scotlandmean-0.2*Scotlandmean) & Datazone@data[,16]<=Scotlandmean+(0.15*Scotlandmean)]<-4
+          Datazone2<-subset(Datazone, Datazone@data[,16]<(Scotlandmean-0.2*Scotlandmean))
+          breaks1<-unique(quantile(Datazone2@data[,16], probs=0:3/3))
+          Datazone@data$SCOcat2<-ifelse(Datazone@data[,16]<(Scotlandmean-0.2*Scotlandmean), cut(Datazone@data[,16], unique(breaks1), include.lowest=TRUE, labels=FALSE), NA)
+          Datazone3<-subset(Datazone, Datazone@data[,16]>Scotlandmean+(0.15*Scotlandmean))
+          breaks2<-unique(quantile(Datazone3@data[,16], probs=0:3/3))
+          Datazone@data$SCOcat3<-ifelse(Datazone@data[,16]>Scotlandmean+(0.15*Scotlandmean), cut(Datazone@data[,16], unique(breaks2), include.lowest=TRUE, labels=FALSE), NA)
+          Datazone@data$SCOcat3[Datazone@data$SCOcat3==1]<-5
+          Datazone@data$SCOcat3[Datazone@data$SCOcat3==2]<-6
+          Datazone@data$SCOcat3[Datazone@data$SCOcat3==3]<-7
+          Datazone@data$SCOcat4<-paste(Datazone@data$SCOcat, Datazone@data$SCOcat2, Datazone@data$SCOcat3)
+          Datazone@data$SCOcat4<-trimws(Datazone@data$SCOcat4)
+          Datazone@data$SCOcat4<-sub("NA NA", "", Datazone@data$SCOcat4)
+          Datazone@data$SCOcat4<-sub(" NA", "", Datazone@data$SCOcat4)
+          Datazone@data$SCOcat4<-sub("NA ", "", Datazone@data$SCOcat4)
+          Datazone@data$SCOcat4<-trimws(Datazone@data$SCOcat4)
+          Datazone@data$SCOcat4<-as.numeric(Datazone@data$SCOcat4)
+          
+          ## too slow load up from file- simplify-
+          # Datazone@data$LAid<-99
+          # LAoutline <- gUnaryUnion(Datazone, id = Datazone@data$LAid)
+          
+          ###################################################################################################################
+          ################## Urban Rural
+          add2<-read.csv(paste0("data/urbanrural.csv"))
+          UrbRur<-merge(add, add2, by.x="CODE", by.y="ï..Datazone2011")
+          UrbRur$UR6_2013_2014<-as.numeric(as.character(UrbRur$UR6_2013_2014))
+          UrbRurmean <-aggregate(UrbRur[,3], by=list(UrbRur$UR6_2013_2014), FUN=mean, na.rm=TRUE)
+          names(UrbRurmean)<-c("UR6_2013_2014", "UR6_2013_2014mean")
+          UrbRurCalc<-merge(UrbRurmean, UrbRur, by="UR6_2013_2014")
+          UrbRurCalc90<-aggregate(UrbRur[,3], by = list(UrbRur$UR6_2013_2014), FUN = function(x) quantile(x, probs = 0.90))
+          names(UrbRurCalc90)<-c("UR6_2013_2014", "UR6_2013_201490")
+          UrbRurCalc<-merge(UrbRurCalc, UrbRurCalc90, by="UR6_2013_2014")
+          
+          
+          ###############
+          UrbRurCalc$UrbRurcat[UrbRurCalc[,5]>=(UrbRurCalc$UR6_2013_2014mean-0.2*UrbRurCalc$UR6_2013_2014mean) & UrbRurCalc[,5]<=UrbRurCalc$UR6_2013_2014mean+(0.15*UrbRurCalc$UR6_2013_2014mean)]<-4
+          UrbRurCalc2<-subset(UrbRurCalc, UrbRurCalc[,5]<(UrbRurCalc$UR6_2013_2014mean-0.2*UrbRurCalc$UR6_2013_2014mean))
+          breaks5<-unique(quantile(UrbRurCalc2[,5], probs=0:3/3))
+          UrbRurCalc$UrbRurcat2<-ifelse(UrbRurCalc[,5]<(UrbRurCalc$UR6_2013_2014mean-0.2*UrbRurCalc$UR6_2013_2014mean), cut(UrbRurCalc[,5], unique(breaks5), include.lowest=TRUE, labels=FALSE), NA)
+          UrbRurCalc3<-subset(UrbRurCalc, UrbRurCalc[,5]>UrbRurCalc$UR6_2013_2014mean+(0.15*UrbRurCalc$UR6_2013_2014mean))
+          breaks6<-unique(quantile(UrbRurCalc3[,5], probs=0:3/3))
+          UrbRurCalc$UrbRurcat3<-ifelse(UrbRurCalc[,5]>UrbRurCalc$UR6_2013_2014mean+(0.15*UrbRurCalc$UR6_2013_2014mean), cut(UrbRurCalc[,5], unique(breaks6), include.lowest=TRUE, labels=FALSE), NA)
+          UrbRurCalc$UrbRurcat3[UrbRurCalc$UrbRurcat3==1]<-5
+          UrbRurCalc$UrbRurcat3[UrbRurCalc$UrbRurcat3==2]<-6
+          UrbRurCalc$UrbRurcat3[UrbRurCalc$UrbRurcat3==3]<-7
+          UrbRurCalc$UrbRurcat4<-paste(UrbRurCalc$UrbRurcat, UrbRurCalc$UrbRurcat2, UrbRurCalc$UrbRurcat3)
+          UrbRurCalc$UrbRurcat4<-trimws(UrbRurCalc$UrbRurcat4)
+          UrbRurCalc$UrbRurcat4<-sub("NA NA", "", UrbRurCalc$UrbRurcat4)
+          UrbRurCalc$UrbRurcat4<-sub(" NA", "", UrbRurCalc$UrbRurcat4)
+          UrbRurCalc$UrbRurcat4<-sub("NA ", "", UrbRurCalc$UrbRurcat4)
+          UrbRurCalc$UrbRurcat4<-trimws(UrbRurCalc$UrbRurcat4)
+          UrbRurCalc$UrbRurcat4<-as.numeric(UrbRurCalc$UrbRurcat4)
+          UrbRurCalcAdd<-subset(UrbRurCalc, select=c("CODE", "UrbRurcat4", "UR6_2013_2014mean", "UR6_2013_201490", "UR6_2013_2014"))
+          Datazone<-merge(Datazone, UrbRurCalcAdd,by.x="code", by.y="CODE")
+          
+          
+          ###################################################################################################################
+          ######################   SIMD
+          add4<-read.csv(paste0("data/SIMD.csv"))
+          SIMD<-merge(add, add4, by.x="CODE", by.y="Data_Zone")
+          SIMD$SIMDrank5<-as.numeric(quantcut(as.numeric(SIMD$Income_domain_2016_rank), 5))
+          SIMDmean <-aggregate(SIMD[,3], by=list(SIMD$SIMDrank5), FUN=mean, na.rm=TRUE)
+          names(SIMDmean)<-c("SIMDrank5", "SIMDmean")
+          SIMDCalc<-merge(SIMDmean, SIMD, by="SIMDrank5")
+          SIMDCalc90<-aggregate(SIMD[,3], by = list(SIMD$SIMDrank5), FUN = function(x) quantile(x, probs = 0.90))
+          names(SIMDCalc90)<-c("SIMDrank5", "SIMD90")
+          SIMDCalc<-merge(SIMDCalc, SIMDCalc90, by="SIMDrank5")
+          
+          
+          SIMDCalc$SIMDcat[SIMDCalc[,5]>=(SIMDCalc$SIMDmean-0.2*SIMDCalc$SIMDmean) & SIMDCalc[,5]<=SIMDCalc$SIMDmean+(0.15*SIMDCalc$SIMDmean)]<-4
+          SIMDCalc2<-subset(SIMDCalc, SIMDCalc[,5]<(SIMDCalc$SIMDmean-0.2*SIMDCalc$SIMDmean))
+          breaks5<-unique(quantile(SIMDCalc2[,5], probs=0:3/3))
+          SIMDCalc$SIMDcat2<-ifelse(SIMDCalc[,5]<(SIMDCalc$SIMDmean-0.2*SIMDCalc$SIMDmean), cut(SIMDCalc[,5], unique(breaks5), include.lowest=TRUE, labels=FALSE), NA)
+          SIMDCalc3<-subset(SIMDCalc, SIMDCalc[,5]>SIMDCalc$SIMDmean+(0.15*SIMDCalc$SIMDmean))
+          breaks6<-unique(quantile(SIMDCalc3[,5], probs=0:3/3))
+          SIMDCalc$SIMDcat3<-ifelse(SIMDCalc[,5]>SIMDCalc$SIMDmean+(0.15*SIMDCalc$SIMDmean), cut(SIMDCalc[,5], unique(breaks6), include.lowest=TRUE, labels=FALSE), NA)
+          SIMDCalc$SIMDcat3[SIMDCalc$SIMDcat3==1]<-5
+          SIMDCalc$SIMDcat3[SIMDCalc$SIMDcat3==2]<-6
+          SIMDCalc$SIMDcat3[SIMDCalc$SIMDcat3==3]<-7
+          SIMDCalc$SIMDcat4<-paste(SIMDCalc$SIMDcat, SIMDCalc$SIMDcat2, SIMDCalc$SIMDcat3)
+          SIMDCalc$SIMDcat4<-trimws(SIMDCalc$SIMDcat4)
+          SIMDCalc$SIMDcat4<-sub("NA NA", "", SIMDCalc$SIMDcat4)
+          SIMDCalc$SIMDcat4<-sub(" NA", "", SIMDCalc$SIMDcat4)
+          SIMDCalc$SIMDcat4<-sub("NA ", "", SIMDCalc$SIMDcat4)
+          SIMDCalc$SIMDcat4<-trimws(SIMDCalc$SIMDcat4)
+          SIMDCalc$SIMDcat4<-as.numeric(SIMDCalc$SIMDcat4)
+          SIMDCalcAdd<-subset(SIMDCalc, select=c("CODE", "SIMDcat4", "SIMDmean", "SIMD90", "SIMDrank5"))
+          Datazone<-merge(Datazone, SIMDCalcAdd,by.x="code", by.y="CODE")
+          
+          
+          
+          ############################# have to make the categories for LA AVERAGE #############################
+          LAmean<-mean(Datazone@data[,16])
+          LA90th<-quantile(Datazone@data[,16], c(.90)) 
+          # have to make the categories
+          Datazone@data$LAcat[Datazone@data[,16]>=(LAmean-0.2*LAmean) & Datazone@data[,16]<=LAmean+(0.15*LAmean)]<-4
+          Datazone2<-subset(Datazone, Datazone@data[,16]<(LAmean-0.2*LAmean))
+          breaks3<-unique(quantile(Datazone2@data[,16], probs=0:3/3))
+          if (length(breaks3)>1 ){
+            Datazone@data$LAcat2<-ifelse(Datazone@data[,16]<(LAmean-0.2*LAmean), cut(Datazone@data[,16], unique(breaks3), include.lowest=TRUE, labels=FALSE), NA)
+          } else {
+            Datazone@data$LAcat2[Datazone@data[,16]<(LAmean-0.2*LAmean)]<-1
+          }
+          Datazone3<-subset(Datazone, Datazone@data[,16]>LAmean+(0.15*LAmean))
+          breaks4<-unique(quantile(Datazone3@data[,16], probs=0:3/3))
+          if (length(breaks4)>1){
+            Datazone@data$LAcat3<-ifelse(Datazone@data[,16]>LAmean+(0.15*LAmean), cut(Datazone@data[,16], unique(breaks4), include.lowest=TRUE, labels=FALSE), NA)
+          } else {   Datazone@data$LAcat3<-1
+          }
+          Datazone@data$LAcat3[Datazone@data$LAcat3==1]<-5
+          Datazone@data$LAcat3[Datazone@data$LAcat3==2]<-6
+          Datazone@data$LAcat3[Datazone@data$LAcat3==3]<-7
+          Datazone@data$LAcat4<-paste(Datazone@data$LAcat, Datazone@data$LAcat2, Datazone@data$LAcat3)
+          Datazone@data$LAcat4<-trimws(Datazone@data$LAcat4)
+          Datazone@data$LAcat4<-sub("NA NA", "", Datazone@data$LAcat4)
+          Datazone@data$LAcat4<-sub(" NA", "", Datazone@data$LAcat4)
+          Datazone@data$LAcat4<-sub("NA ", "", Datazone@data$LAcat4)
+          Datazone@data$LAcat4<-trimws(Datazone@data$LAcat4)
+          Datazone@data$LAcat4<-as.numeric(Datazone@data$LAcat4)
+          ###################################################################################################################    
+          
+          
+          
+          if(input$comparison=="SCO"){
+            pal <- colorNumeric(c("#5d8bba", "#ffffe5", "#d73027"), 1:7)   
+            
+            ### superscript in leaflet
+            
+            popup <- paste0("<h3>", Datazone$name, "</h3><br>",
+                            "Density around the population centre is ", "<strong>", round(Datazone@data[,16], 2)," per km2","</strong>",
+                            "<br/>",
+                            "This is <strong>", round((Datazone@data[,16]/Datazone$Scottishaverage*100),0), ifelse(round(Datazone@data[,16], 2)>round(Datazone$Scottishaverage, 2) ,"% higher</strong> than", "%</strong> of")," the Scottish average",
+                            "<br/>",
+                            ifelse(Datazone@data[,16]>Scottish90th, "<strong><font color='#EE2C2C'>This datazone is in the top 10% of neighbourhoods in Scotland</font></strong>", ""),
+                            "<br/>",
+                            "<br/>",
+                            " More information available on this datazone ", "<b><a target='_blank' href='http://statistics.gov.scot/doc/statistical-geography/", Datazone$code,"'>here</a></b>")
+            
+            #################
+            mapit  %>%
+              
+              #addPolygons(data=LAoutline,
+              #            stroke=T,
+              #            weight=3,
+              #            color= "black",
+              #            fillOpacity = 0) #%>%
+              
+              addPolygons(data=Datazone,
+                          stroke=T,
+                          weight=0.3,
+                          smoothFactor = 0.2,
+                          fillOpacity = 0.62,
+                          popup=popup,
+                          color= ~pal(SCOcat4),
+                          highlightOptions = highlightOptions(color = "black", weight = 3,
+                                                              bringToFront = TRUE)) %>%
+              addMarkers(data=map2, ~long, ~lat)
+          }
+          else if(input$comparison=="LA"){
+            pal <- colorNumeric(c("#5d8bba", "#ffffe5", "#d73027"), 1:7)   
+            
+            popup <- paste0("<h3>", Datazone$name, "</h3><br>",
+                            "Density around the population centre is ", "<strong>", round(Datazone@data[,16], 2)," per km2","</strong>",
+                            "<br/>",
+                            "This is <strong>", round((Datazone@data[,16]/LAmean*100),0), ifelse(round(Datazone@data[,16], 2)>round(LAmean, 2) ,"% higher than</strong>", "%</strong> of")," the ", input$LAinput, " average",
+                            "<br/>",
+                            ifelse(Datazone@data[,16]>LA90th, paste0("<strong><font color='#EE2C2C'>This datazone is in the top 10% of neighbourhoods in ", input$LAinput, "</font></strong>"), ""),
+                            "<br/>",
+                            "<br/>",
+                            " More information available on this datazone ", "<b><a target='_blank' href='http://statistics.gov.scot/doc/statistical-geography/", Datazone$code,"'>here</a></b>")
+            
+            mapit  %>%     
+              addPolygons(data=Datazone,
+                          stroke=TRUE,
+                          weight=0.1,
+                          smoothFactor = 0.2,
+                          fillOpacity = 0.62,
+                          popup=popup,
+                          color= ~pal(LAcat4),
+                          highlightOptions = highlightOptions(color = "black", weight = 3,
+                                                              bringToFront = TRUE)) 
+            
+          }
+          else if(input$comparison=="URBRUR"){
+            pal <- colorNumeric(c("#5d8bba", "#ffffe5", "#d73027"), 1:7)   
+            
+            popup <- paste0("<h3>", Datazone$name, "</h3><br>",
+                            "Density around the population centre is ", "<strong>", round(Datazone@data[,16], 2)," per km2","</strong>",
+                            "<br/>",
+                            "This is <strong>", round((Datazone@data[,16]/Datazone$UR6_2013_2014mean*100),0), ifelse(round(Datazone@data[,16], 2)>round(Datazone$UR6_2013_2014mean, 2) ,"% higher than</strong>", "%</strong> of")," the Urban Rural Classification (6-Fold) Group ", Datazone$UR6_2013_2014, " average",
+                            "<br/>",
+                            ifelse(Datazone@data[,16]>Datazone$UR6_2013_201490, paste0("<strong><font color='#EE2C2C'>This datazone is in the top 10% of neighbourhoods in the Urban Rural Classification (6-Fold) Group ", Datazone$UR6_2013_2014, "</font></strong>"), ""),
+                            "<br/>",
+                            "<br/>",
+                            " More information available on this datazone ", "<b><a target='_blank' href='http://statistics.gov.scot/doc/statistical-geography/", Datazone$code,"'>here</a></b>")
+            
+            
+            mapit %>% 
+              #addPolygons(data=LAoutline,
+              #            stroke=T,
+              #            weight=3,
+              #            color= "black",
+              #            fillOpacity = 0) #%>%
+              
+              addPolygons(data=Datazone,
+                          stroke=TRUE,
+                          weight=0.1,
+                          smoothFactor = 0.2,
+                          fillOpacity = 0.62,
+                          popup=popup,
+                          color= ~pal(UrbRurcat4),
+                          highlightOptions = highlightOptions(color = "black", weight = 3,
+                                                              bringToFront = TRUE)) 
+            
+          }
+          else if(input$comparison=="SIMD"){
+            pal <- colorNumeric(c("#5d8bba", "#ffffe5", "#d73027"), 1:7)   
+            
+            ### superscript in leaflet
+            popup <- paste0("<h3>", Datazone$name, "</h3><br>",
+                            "Density around the population centre is ", "<strong>", round(Datazone@data[,16], 2)," per km2","</strong>",
+                            "<br/>",
+                            "This is <strong>", round((Datazone@data[,16]/Datazone$SIMDmean*100),0), ifelse(round(Datazone@data[,16], 2)>round(Datazone$SIMDmean, 2) ,"% higher than</strong>", "% of</strong>")," the Scottish Index of Multiple Deprivation Quintile Group ", Datazone$SIMDrank5, " average",
+                            "<br/>",
+                            ifelse(Datazone@data[,16]>Datazone$SIMD90, paste0("<strong><font color='#EE2C2C'>This datazone is in the top 10% of neighbourhoods in the Scottish Index of Multiple Deprivation Quintile Group ", Datazone$SIMDrank5, "</font></strong>"), ""),
+                            "<br/>",
+                            "<br/>",
+                            " More information available on this datazone ", "<b><a target='_blank' href='http://statistics.gov.scot/doc/statistical-geography/", Datazone$code,"'>here</a></b>")
+            
+            #####################
+            mapit  %>%
+              #addPolygons(data=LAoutline,
+              #            stroke=T,
+              #            weight=3,
+              #            color= "black",
+              #            fillOpacity = 0) #%>%
+              
+              addPolygons(data=Datazone,
+                          stroke=TRUE,
+                          weight=0.1,
+                          smoothFactor = 0.2,
+                          fillOpacity = 0.62,
+                          popup=popup,
+                          color= ~pal(SIMDcat4),
+                          highlightOptions = highlightOptions(color = "black", weight = 3,
+                                                              bringToFront = TRUE)) 
+            
+          }
+        }
       }
-      
-    }
+      )}
     else{
       mapit <- leafletProxy("map") %>% clearShapes() %>%clearMarkers() %>% setView(lng =-4.2026, lat = 56.4907, zoom = 7) 
     }
@@ -1248,6 +1301,8 @@ shinyServer(function(input, output) {
   
   
   # save the results to a file
+  
+  
   options(mongodb = list(
     "host" = "ds157187.mlab.com:57187",
     "username" = "marko",
