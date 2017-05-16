@@ -15,6 +15,22 @@ list<-read.csv("data/list.csv", header=F)
 
 ## Somehow take out V1 in the selection box!!!
 
+# log scale
+JScode <-
+  "$(function() {
+    setTimeout(function(){
+      var vals = [0];
+      var powStart = 1;
+      var powStop = 7;
+      for (i = powStart; i <= powStop; i++) {
+        var val = Math.pow(10, i);
+        val = parseFloat(val.toFixed(8));
+        vals.push(val);
+      }
+      $('#range').data('ionRangeSlider').update({'values':vals})
+    }, 5)})"
+
+
 ##
 textInputRow<-function (inputId, label, value = "") 
 {
