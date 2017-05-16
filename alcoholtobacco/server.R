@@ -370,7 +370,6 @@ shinyServer(function(input, output) {
         
         ################## Hospital Admissions
         HospAdd<-read.csv(paste0("data/Hosp.csv"))
-        HospAdd$ALCOHOL<-as.numeric(HospAdd$ALCOHOL)
         Datazone<-merge(Datazone, HospAdd,by="code")
         ScottishHospmean<-mean(HospAdd$ALCOHOL)
         ScottishHosp90<-quantile(HospAdd$ALCOHOL, c(.90))
@@ -417,11 +416,15 @@ shinyServer(function(input, output) {
                           ". You have selected to display density data for ", Datatypechoice, " for ", Yearchoice, ", with the buffer size of ", Bufferchoice," m,"," and colours ", Rankchoice,
                           "</br></br><b>",
                           substr(Datatypechoice,7,14), " Outlet Density </b></br>",
-                          "<ul><li>Density around the population centre is ", round(Datazone@data[,16], 2)," per km<sup>2</sup>, which is ", round((Datazone@data[,16]/Datazone$Scottishaverage*100),0), ifelse(round(Datazone@data[,16], 2)>round(Datazone$Scottishaverage, 2) ,"% higher than", "% of")," the Scottish average.</li>",
+                          "<ul><li>Density around the population centre is ", round(Datazone@data[,16], 2)," per km<sup>2</sup>.","</li>",
+                          "<br/>",
+                          "<li>This is ", round((Datazone@data[,16]/Datazone$Scottishaverage*100),0), ifelse(round(Datazone@data[,16], 2)>round(Datazone$Scottishaverage, 2) ,"% higher than", "% of")," the Scottish average.</li>",
                           "<br/><li>",
                           ifelse(Datazone@data[,16]>Scottish90th, "<font color='#EE2C2C'>This datazone is in the top 10% of neighbourhoods in Scotland.</font></li></ul>", "This datazone is not in the top 10% of neighbourhoods in Scotland.</li></ul>"),
                           "<b> Health </b></br>",
-                          "<ul><li>The standardised ratio of hospital stays related to alcohol misuse is ", Datazone@data$ALCOHOL, " which is ", round((Datazone@data$ALCOHOL/ScottishHospmean*100),0), ifelse(round(Datazone@data$ALCOHOL, 2)>round(ScottishHospmean, 2) ,"% higher than", "% of")," the Scottish average.</li>",
+                          "<ul><li>The standardised ratio of hospital stays related to alcohol misuse is ", Datazone@data$ALCOHOL, "</li></br>",
+                          "</br>",
+                          "<li>This is ", round((Datazone@data$ALCOHOL/ScottishHospmean*100),0), ifelse(round(Datazone@data$ALCOHOL, 2)>round(ScottishHospmean, 2) ,"% higher than", "% of")," the Scottish average.</li>",
                           "<li>The proportion of the population being prescribed drugs for anxiety, depression or psychosis is ", Datazone@data$DEPRESS,"</li></br>",
                           "<li>The standardised mortality ratio is ", Datazone@data$SMR,"</li>",
                           "<br/>",
