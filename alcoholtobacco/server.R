@@ -542,7 +542,7 @@ shinyServer(function(input, output) {
           Datazone <- spTransform(Datazone, CRS("+proj=longlat +datum=WGS84"))
           # Datazone2 is the datazone location
           Datazone2 <- Datazone[location[1,2], ]
-          buffer<-gBuffer(map, width = 3000)
+          buffer<-gBuffer(map, width = 5000)
           buffer<-spTransform(buffer, proj4string(Datazone))
           Datazone3 <-gIntersects(Datazone, buffer, byid = T)
           Datazone3<- as.data.frame(t(Datazone3))
@@ -857,7 +857,7 @@ shinyServer(function(input, output) {
             Datazone <- spTransform(Datazone, CRS("+proj=longlat +datum=WGS84"))
             # Datazone2 is the datazone location
             Datazone2 <- Datazone[location[1,2], ]
-            buffer<-gBuffer(map, width = 3000)
+            buffer<-gBuffer(map, width = 5000)
             buffer<-spTransform(buffer, proj4string(Datazone))
             Datazone3 <-gIntersects(Datazone, buffer, byid = T)
             Datazone3<- as.data.frame(t(Datazone3))
