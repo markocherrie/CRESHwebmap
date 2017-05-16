@@ -378,15 +378,15 @@ shinyServer(function(input, output) {
         Yearchoice<-input$year
         Rankchoice<-input$comparison
         
-        Datatypechoice<-sub("alcoholOff", "Alcohol Off Sales", Datatypechoice)        
-        Datatypechoice<-sub("alcoholBoth", "Alcohol Both On and Off Sales", Datatypechoice)    
-        Datatypechoice<-sub("alcoholTOTAL", "Alcohol Total Sales", Datatypechoice)    
-        Datatypechoice<-sub("tobaccoTOTAL", "Tobacco Total Sales", Datatypechoice)    
+        Datatypechoice<-sub("alcoholOff",  "Off Alcohol Sales", Datatypechoice)        
+        Datatypechoice<-sub("alcoholBoth", "Both On and Off Alcohol Sales", Datatypechoice)    
+        Datatypechoice<-sub("alcoholTOTAL", "Total Alcohol Sales", Datatypechoice)    
+        Datatypechoice<-sub("tobaccoTOTAL", "Total Tobacco Sales", Datatypechoice)    
         
-        Rankchoice<-sub("LA", "in comparison to the Local Authority average", Rankchoice)        
-        Rankchoice<-sub("SCO", "in comparison to the Scottish average", Rankchoice)    
-        Rankchoice<-sub("URBRUR", "in comparison to the Urban/Rural average", Rankchoice)    
-        Rankchoice<-sub("SIMD", "in comparison to the Deprivation average", Rankchoice)    
+        Rankchoice<-sub("LA", "in comparison to the Local Authority average.", Rankchoice)        
+        Rankchoice<-sub("SCO", "in comparison to the Scottish average.", Rankchoice)    
+        Rankchoice<-sub("URBRUR", "in comparison to the Urban/Rural average.", Rankchoice)    
+        Rankchoice<-sub("SIMD", "in comparison to the Deprivation average.", Rankchoice)    
         
         ###
         
@@ -398,7 +398,7 @@ shinyServer(function(input, output) {
           popup <- paste0("<h3>", Datazone$name, "</h3><br>",
                           "<b> Description </b> </br>",
                           "This datazone is within the local authority of ", Datazone@data$Councilname,
-                          ". You have selected to display data for ", Datatypechoice, " for ", Yearchoice, ", with the buffer size set at ", Bufferchoice," m,"," and colours ", Rankchoice,
+                          ". You have selected to display data for ", Datatypechoice, " for ", Yearchoice, ", with the buffer size of ", Bufferchoice," m,"," and colours ", Rankchoice,
                           "</br></br><b>",
                           substr(Datatypechoice,1,7), " Outlet Density </b></br>",
                           "<ul><li>Density around the population centre is ", round(Datazone@data[,16], 2)," per km<sup>2</sup>","</li>",
