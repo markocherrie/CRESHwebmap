@@ -395,7 +395,7 @@ shinyServer(function(input, output) {
                           "<li>Standardised mortality ratio: ", Datazone@data$SMR,"</li>",
                           "<br/>",
                           "<br/>",
-                          " More information available on this datazone ", "<b><a target='_blank' href='http://statistics.gov.scot/doc/statistical-geography/", Datazone$code,"'>here</a></b>")
+                          "<b><a target='_blank' href='http://statistics.gov.scot/doc/statistical-geography/", Datazone$code,"'> Click here for more information available on this datazone</a></b>")
           
           #################
           mapit  %>%
