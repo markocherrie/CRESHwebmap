@@ -370,11 +370,12 @@ shinyServer(function(input, output) {
         
         ################## Hospital Admissions
         HospAdd<-read.csv(paste0("data/Hosp.csv"))
+        HospAdd$ALCOHOL<-as.numeric(HospAdd$ALCOHOL)
         Datazone<-merge(Datazone, HospAdd,by="code")
-        ScottishHospmean<-mean(as.numeric(HospAdd$ALCOHOL))
-        ScottishHosp90<-quantile(as.numeric(HospAdd$ALCOHOL), c(.90))
-        #LAHospmean<-mean(as.numeric(Datazone@data$ALCOHOL))
-        #LAHosp90<-quantile(as.numeric(HospAdd@data$ALCOHOL, c(.90)))
+        ScottishHospmean<-mean(HospAdd$ALCOHOL)
+        ScottishHosp90<-quantile(HospAdd$ALCOHOL, c(.90))
+        #LAHospmean<-mean(Datazone@data$ALCOHOL)
+        #LAHosp90<-quantile(HospAdd@data$ALCOHOL, c(.90))
         #SIMDHosp<-merge(HospAdd, add4, by.x="code", by.y="Data_Zone")
         #SIMDHosp$SIMDrank5<-as.numeric(quantcut(as.numeric(SIMDHosp$Income_domain_2016_rank), 5))
         #SIMDHosp<-subset(SIMDHosp, select=c(""))
