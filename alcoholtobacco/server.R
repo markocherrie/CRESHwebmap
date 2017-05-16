@@ -382,6 +382,7 @@ shinyServer(function(input, output) {
           popup <- paste0("<h3>", Datazone$name, "</h3><br>",
                           "<b> Geography </b> </br>",
                           "This datazone is within the intermediate zone of ", Datazone@data$Intermediate_Zone, " and the local authority of ", Datazone@data$Councilname,"</br>",
+                          "</br>",
                           "<b> Alcohol and Tobacco Outlet Density </b></br>",
                           "<ul><li>Density around the population centre is ", round(Datazone@data[,16], 2)," per km2","</li>",
                           "<br/>",
