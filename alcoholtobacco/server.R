@@ -378,6 +378,7 @@ shinyServer(function(input, output) {
         Yearchoice<-input$year
         Rankchoice<-input$comparison
         
+        ## ugly but needed to get nicely formatted stuff for description in popup
         Datatypechoice<-sub("alcoholOff",  "Off Alcohol Sales", Datatypechoice)        
         Datatypechoice<-sub("alcoholBoth", "Both On and Off Alcohol Sales", Datatypechoice)    
         Datatypechoice<-sub("alcoholTOTAL", "Total Alcohol Sales", Datatypechoice)    
