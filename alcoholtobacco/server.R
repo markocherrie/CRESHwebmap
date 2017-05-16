@@ -96,63 +96,6 @@ sp.na.omit <- function(x, margin=2) {
 
 shinyServer(function(input, output) {
   
-  output$test=renderUI({ 
-    if(input$checkbox_1==F){  
-      list(
-        selectInput("year", "Year",
-                    list("2012" = "2012",
-                         "2016" = "2016"),
-                    selected="2016"),
-        bsTooltip("buffer", "Here you can toggle the buffer size, that is, the distance you would expect people to travel to visit these retailers. Larger buffer sizes may be more appropriate for rural areas and smaller ones for urban areas.", "top"
-        ),
-        
-        selectInput("buffer", "Buffer Size (m)",
-                    list("400" = "400",
-                         "800" = "800",
-                         "1,000"  = "1000",
-                         "1,200"  = "1200",
-                         "1,600" = "1600",
-                         "2,000" = "2000",
-                         "3,000" = "3000",
-                         "4,000" = "4000",
-                         "5,000" = "5000"), selected="800"),
-        bsTooltip("comparison", "Datazones can be ranked in comparison to the local authority and Scottish average. In addition you can see each datazone ranked in comparison to other datazones of similar urban/rural or deprivation status.", "top"
-        ),
-        selectInput("comparison", "Rank Colour Options",
-                    list("Compared to Local Authority Average" = "LA",
-                         "Compared to Scottish Average" = "SCO",
-                         "Compared to Urban/Rural Average"  = "URBRUR",
-                         "Compared to Deprivation Average"  = "SIMD"
-                    ), selected="SCO"))}
-    if(input$checkbox_1==T){  
-      list(
-        selectInput("year", "Year",
-                    list("2012" = "2012",
-                         "2016" = "2016"),
-                    selected="2016"),
-        bsTooltip("buffer", "Here you can toggle the buffer size, that is, the distance you would expect people to travel to visit these retailers. Larger buffer sizes may be more appropriate for rural areas and smaller ones for urban areas.", "top"
-        ),
-        selectInput("buffer", "Buffer Size (m)",
-                    list("400" = "400",
-                         "800" = "800",
-                         "1,000"  = "1000",
-                         "1,200"  = "1200",
-                         "1,600" = "1600",
-                         "2,000" = "2000",
-                         "3,000" = "3000",
-                         "4,000" = "4000",
-                         "5,000" = "5000"), selected="800"),
-        bsTooltip("comparison", "Datazones can be ranked in comparison to the local authority and Scottish average. In addition you can see each datazone ranked in comparison to other datazones of similar urban/rural or deprivation status.", "top"
-        ),
-        selectInput("comparison", "Rank Colour Options",
-                    list("Compared to Local Authority Average" = "LA",
-                         "Compared to Scottish Average" = "SCO",
-                         "Compared to Urban/Rural Average"  = "URBRUR",
-                         "Compared to Deprivation Average"  = "SIMD"
-                    ), selected="SCO"))}
-  }
-  ) 
-  
   
   ###### Change to say Lowest, Average and Highest in the legend
   
