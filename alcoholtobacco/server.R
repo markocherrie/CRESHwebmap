@@ -583,6 +583,12 @@ shinyServer(function(input, output) {
       } else {
         mapit  %>% setView(lng =-4.2026, lat = 56.4907, zoom = 7) 
       }
+      map<-SpatialPoints(cbind(as.numeric(long),as.numeric(lat)))
+      map2<-as.data.frame(cbind(long=as.numeric(long), lat=as.numeric(lat)))
+      proj4string(map) <- CRS("+proj=longlat +datum=WGS84")
+      map<-spTransform(map, proj4string(geog))
+      location<-over(map, geog , fn = NULL)
+      location2<-location[1,2]
     }
     })
   
