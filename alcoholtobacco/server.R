@@ -1,6 +1,5 @@
 library(shiny)
 library(leaflet)
-# geocoding shiny
 require(RCurl)
 require(RJSONIO)
 require(plyr)
