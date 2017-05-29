@@ -17,7 +17,6 @@ library(leaflet.extras)
 # devtools::install_github("hrbrmstr/ipapi")
 library(ipapi)
 
-#source_gist("524eade46135f6348140")
 
 ### Load the data
 #mydata<-read.csv("//home1.geos.ed.ac.uk/mcherrie/CRESH_MC/WEBMAP/CRESHMAP/data/webmapdata_testscript_Dec2016.csv")
@@ -214,6 +213,7 @@ shinyServer(function(input, output) {
         ###################################################################################################################
         ################## Urban Rural
         add2<-read.csv(paste0("data/urbanrural.csv"))
+        add2$Datazone2011<-add2[,1]
         UrbRur<-merge(add, add2, by.x="CODE", by.y="Datazone2011")
         UrbRur$UR6_2013_2014<-as.numeric(as.character(UrbRur$UR6_2013_2014))
         UrbRurmean <-aggregate(UrbRur[,3], by=list(UrbRur$UR6_2013_2014), FUN=mean, na.rm=TRUE)
@@ -904,6 +904,7 @@ shinyServer(function(input, output) {
             ###################################################################################################################
             ################## Urban Rural
             add2<-read.csv(paste0("data/urbanrural.csv"))
+            add2$Datazone2011<-add2[,1]
             UrbRur<-merge(add, add2, by.x="CODE", by.y="Datazone2011")
             UrbRur$UR6_2013_2014<-as.numeric(as.character(UrbRur$UR6_2013_2014))
             UrbRurmean <-aggregate(UrbRur[,3], by=list(UrbRur$UR6_2013_2014), FUN=mean, na.rm=TRUE)
@@ -1194,6 +1195,7 @@ shinyServer(function(input, output) {
       ###################################################################################################################
       ################## Urban Rural
       add2<-read.csv(paste0("data/urbanrural.csv"))
+      add2$Datazone2011<-add2[,1]
       UrbRur<-merge(add, add2, by.x="CODE", by.y="Datazone2011")
       UrbRur$UR6_2013_2014<-as.numeric(as.character(UrbRur$UR6_2013_2014))
       UrbRurmean <-aggregate(UrbRur[,3], by=list(UrbRur$UR6_2013_2014), FUN=mean, na.rm=TRUE)
