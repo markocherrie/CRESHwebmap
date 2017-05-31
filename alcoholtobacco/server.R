@@ -313,7 +313,8 @@ shinyServer(function(input, output) {
         
         ################## Hospital Admissions
         HospAdd<-read.csv(paste0("data/Hosp.csv"))
-        HospAdd$ALCOHOL<-as.numeric(HospAdd$ALCOHOL)
+        HospAdd$ALCOHOL<-sub(",", "", HospAdd$ALCOHOL)
+        HospAdd$ALCOHOL<-as.numeric(as.character(HospAdd$ALCOHOL))
         Datazone<-merge(Datazone, HospAdd,by="code")
         ScottishHospmean<-mean(HospAdd$ALCOHOL)
         ScottishHosp90<-quantile(HospAdd$ALCOHOL, c(.90))
@@ -359,7 +360,7 @@ shinyServer(function(input, output) {
                           "This datazone is within the local authority of ", Datazone@data$Councilname,
                           ". You have selected to display density data for ", Datatypechoice, " for ", Yearchoice, ", with the buffer size of ", Bufferchoice," m,"," and colours ", Rankchoice,
                           "</br></br><b>",
-                          substr(Datatypechoice,7,14), " Outlet Density </b></br>",
+                          Datatypechoice, " Outlet Density </b></br>",
                           "<ul><li>Density around the population centre is ", round(Datazone@data[,16], 2)," per km<sup>2</sup>.","</li>",
                           "<br/>",
                           "<li>This is ", round((Datazone@data[,16]/Datazone$Scottishaverage*100),0), ifelse(round(Datazone@data[,16], 2)>round(Datazone$Scottishaverage, 2) ,"% higher than", "% of")," the Scottish average.</li>",

@@ -94,18 +94,8 @@ shinyUI(fluidPage(
   )),
   sidebarPanel( 
     strong("Description"),
-    helpText("This application allows you to map alcohol and tobacco outlet density and related harm for small neighbourhoods across Scotland.
-            Use the options below to choose the geographical area and data you are interested in.
- Once you have defined data for a single area, use the tabbed menu to get: an impression on how provision has changed over time (2012-2016), a text and visual summary and instructions on how to download the underlying data."),
+    helpText("This application allows you to map alcohol and tobacco outlet density and related harm for small neighbourhoods across Scotland. Further information is available from the 'About' and 'How to Use' tabs on the right hand side."),
     tags$head(tags$script(HTML(JScode))),
-    bsTooltip("datatype", "There are different types of alcohol retailers. On-sales are when alcohol is consumed on the premises, off-sales are when it is bought at the retailer but consumed elsewhere. Some retailers offer both on and off sales.", "top"
-    ),
-    selectInput("datatype", "Data Type:",
-                c("Alcohol On Sales" = "alcoholOn",
-                  "Alcohol Off Sales" = "alcoholOff",
-                  "Alcohol Both On and Off Sales" = "alcoholBoth",
-                  "Alcohol Total Sales" = "alcoholTOTAL",
-                  "Tobacco Total Sales" = "tobaccoTOTAL"), selected="alcoholTOTAL"),
     # adding the new div tag to the sidebsar            
     bsTooltip("LAinput", "We have used 2011 Scottish datazones as our smallest neighbourhood units. As there nearly 7,000, choose to display a subset by selecting up to 5 local authorities. If you do wish to view the whole of Scotland, select the Scotland option, however please be patient, this will result in much longer loading times", "top"
     ),
@@ -117,13 +107,21 @@ shinyUI(fluidPage(
     div(style="display:inline-block",actionButton("goButton", "Enter")),
     tags$br(),
     uiOutput("Variable"),
+    bsTooltip("datatype", "There are different types of alcohol retailers. On-sales are when alcohol is consumed on the premises, off-sales are when it is bought at the retailer but consumed elsewhere. Some retailers offer both on and off sales.", "top"
+    ),
+    selectInput("datatype", "Data Type:",
+                c("Alcohol On Sales" = "alcoholOn",
+                  "Alcohol Off Sales" = "alcoholOff",
+                  "Alcohol Both On and Off Sales" = "alcoholBoth",
+                  "Alcohol Total Sales" = "alcoholTOTAL",
+                  "Tobacco Total Sales" = "tobaccoTOTAL"), selected="alcoholTOTAL"),
     selectInput("year", "Year",
                 list("2012" = "2012",
                      "2016" = "2016"),
                 selected="2016"),
-    bsTooltip("buffer", "Here you can toggle the buffer size, that is, the distance you would expect people to travel to visit these retailers. Larger buffer sizes may be more appropriate for rural areas and smaller ones for urban areas.", "top"
+    bsTooltip("buffer", "In the density calculation this is also known as the buffer size, that is, the distance you would expect people to travel to visit these outlets. Larger buffer sizes may be more appropriate for rural areas and smaller ones for urban areas.", "top"
     ),
-    selectInput("buffer", "Buffer Size (m)",
+    selectInput("buffer", "Typical Distance to Outlet (m)",
                 list("400" = "400",
                      "800" = "800",
                      "1,000"  = "1000",
