@@ -145,8 +145,10 @@ shinyUI(fluidPage(
     helpText("Application built in Rstudio (0.98.507) using data...acknowledgements...")),
   tags$br(),
   mainPanel(
-    tabsetPanel(type = "tabs", 
+    tabsetPanel(type = "tabs",
                 tabPanel("Map", leafletOutput("map")),
+                tabPanel("About", includeHTML("about.html")),
+                tabPanel("How to use", includeHTML("howtouse.html")),
                 #tabPanel("Change over time", leafletOutput("change")),
                 tabPanel("Register to Download", htmlOutput("download")),
                 tabPanel("Download", 
