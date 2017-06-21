@@ -379,7 +379,7 @@ shinyServer(function(input, output) {
                           ifelse(Datazone@data$ALCOHOL>ScottishHosp90, "<font color='#EE2C2C'>This datazone is in the top 10% of neighbourhoods in Scotland.</font></li></ul>", "This datazone is not in the top 10% of neighbourhoods in Scotland.</li></ul>"),
                           "<br/>",
                           "<b> Crime </b></br>",
-                          "<ul><li>The Recorded crimes of violence, sexual offences, domestic housebreaking, vandalism, drugs offences, and common assault per 10,000 people is ", Datazone@data$crime_rate, "</li></br>",
+                          "<ul><li> There is ", Datazone@data$crime_rate, " recorded crimes of violence, sexual offences, domestic housebreaking, vandalism, drugs offences, and common assault per 10,000 people.</li></br>",
                           "<li>This is ", round((Datazone@data$crime_rate/ScottishCrimeratemean*100),0), ifelse(round(Datazone@data$crime_rate, 2)>round(ScottishCrimeratemean, 2) ,"% higher than", "% of")," the Scottish average.</li>",
                           "<br/><li>",
                           ifelse(Datazone@data$crime_rate>ScottishCrimerate90, "<font color='#EE2C2C'>This datazone is in the top 10% of neighbourhoods in Scotland.</font></li></ul>", "This datazone is not in the top 10% of neighbourhoods in Scotland.</li></ul>"),
