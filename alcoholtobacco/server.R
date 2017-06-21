@@ -332,11 +332,8 @@ shinyServer(function(input, output) {
         
         ################# Crime
         CrimeAdd<-read.csv(paste0("data/crime.csv"))
-        CrimeAdd$crime_count<-as.numeric(as.character(CrimeAdd$crime_count))
         CrimeAdd$crime_rate<-as.numeric(as.character(CrimeAdd$crime_rate))
         Datazone<-merge(Datazone, CrimeAdd,by="code")
-        ScottishCrimecountmean<-mean(CrimeAdd$crime_count, na.rm=T)
-        ScottishCrimecount90<-quantile(CrimeAdd$crime_count, c(.90), na.rm=T)
         ScottishCrimeratemean<-mean(CrimeAdd$crime_rate, na.rm=T)
         ScottishCrimerate90<-quantile(CrimeAdd$crime_rate, c(.90), na.rm=T)
         
@@ -382,10 +379,10 @@ shinyServer(function(input, output) {
                           ifelse(Datazone@data$ALCOHOL>ScottishHosp90, "<font color='#EE2C2C'>This datazone is in the top 10% of neighbourhoods in Scotland.</font></li></ul>", "This datazone is not in the top 10% of neighbourhoods in Scotland.</li></ul>"),
                           "<br/>",
                           "<b> Crime </b></br>",
-                          "<ul><li>The number of recorded crimes of violence, sexual offences, domestic housebreaking, vandalism, drugs offences, and common assault is ", Datazone@data$crime_count, "</li></br>",
-                          "<li>This is ", round((Datazone@data$crime_count/ScottishCrimecountmean*100),0), ifelse(round(Datazone@data$crime_count, 2)>round(ScottishCrimecountmean, 2) ,"% higher than", "% of")," the Scottish average.</li>",
+                          "<ul><li>The Recorded crimes of violence, sexual offences, domestic housebreaking, vandalism, drugs offences, and common assault per 10,000 people is ", Datazone@data$crime_rate, "</li></br>",
+                          "<li>This is ", round((Datazone@data$crime_rate/ScottishCrimeratemean*100),0), ifelse(round(Datazone@data$crime_rate, 2)>round(ScottishCrimeratemean, 2) ,"% higher than", "% of")," the Scottish average.</li>",
                           "<br/><li>",
-                          ifelse(Datazone@data$crime_count>ScottishCrimecount90, "<font color='#EE2C2C'>This datazone is in the top 10% of neighbourhoods in Scotland.</font></li></ul>", "This datazone is not in the top 10% of neighbourhoods in Scotland.</li></ul>"),
+                          ifelse(Datazone@data$crime_rate>ScottishCrimerate90, "<font color='#EE2C2C'>This datazone is in the top 10% of neighbourhoods in Scotland.</font></li></ul>", "This datazone is not in the top 10% of neighbourhoods in Scotland.</li></ul>"),
                           "<br/>",
                           
                           "<b><a target='_blank' href='http://statistics.gov.scot/doc/statistical-geography/", Datazone$code,"'> Click here for more information available on this datazone</a></b>")
