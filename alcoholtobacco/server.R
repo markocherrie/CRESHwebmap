@@ -13,40 +13,11 @@ library(mongolite)
 library(rgdal)
 library(DT)
 library(leaflet.extras)
-
 # devtools::install_github("hrbrmstr/ipapi")
 library(ipapi)
 
-
-### Load the data
-#mydata<-read.csv("//home1.geos.ed.ac.uk/mcherrie/CRESH_MC/WEBMAP/CRESHMAP/data/webmapdata_testscript_Dec2016.csv")
-#mydata<-readRDS("data/mydata.RDS")
-#mydata[is.na(mydata)]<-"MISSING"
-
-
-### sort out data- numeric issues
-#locationgeog<-readRDS("//home1.geos.ed.ac.uk/mcherrie/CRESH_MC/WEBMAP/CRESHMAP/geography/datazone.rds")
-#IG<-readOGR("//home1.geos.ed.ac.uk/mcherrie/CRESH_MC/WEBMAP/CRESHMAP/geography", "Councils_from_IG")
-#locationgeog<-merge(locationgeog, mydata, by.x="zonecode", by.y="datazone")
-#r.vals <- extract(IG, coordinates(locationgeog), small=TRUE)
-#locationgeog@data <- data.frame(locationgeog@data, r.vals$NAME)
-#list<-levels(locationgeog@data$laname)
-#for (i in list){
-#  output<-locationgeog[locationgeog@data$laname==i,]
-#  saveRDS(output, paste0("geography/la/", i, ".rds"))
-#}
-
-### Load the geodata
-#IG<-readOGR("//home1.geos.ed.ac.uk/mcherrie/CRESH_MC/WEBMAP/CRESHMAP/geography", "Councils_from_IG")
-#SP<-readOGR("//home1.geos.ed.ac.uk/mcherrie/CRESH_MC/WEBMAP/CRESHMAP/geography", "Scotparlconst2011_fromDZ")
-#geog<-readRDS("//home1.geos.ed.ac.uk/mcherrie/CRESH_MC/WEBMAP/CRESHMAP/geography/datazone.rds")
-
-# Remember that I have simplified the polygons to reduce file size! Could have used rgeos but I am using QGISs
-
 ## load local authority shapefile
 geog<-readRDS("geography/councilareas.rds")
-#geog3 <- spTransform(geog, CRS("+proj=longlat +datum=WGS84"))
-#geog2<-readOGR("geography", "LA")
 
 # functions
 
@@ -112,9 +83,10 @@ shinyServer(function(input, output) {
       addLayersControl(
         baseGroups = c("CartoDB Positron", "Toner", "OSM"),
         options = layersControlOptions(collapsed = TRUE)) %>%
-      addLegend("bottomright", pal = pal, values=c(1:7),
-                title = "Rank",
-                labels= c("Lowest", "","","Average","","", "Highest"),
+      addLegend("bottomright", 
+               colors=c("#e37779", "#f0a89e", "#fcd0c2", "#fafae9","#d6dade","#b8c9da", "#91b1d4"),
+                title = "Outlet Density Rank",
+                labels= c("Highest", "","","Average","","", "Lowest"),
                 opacity = 1
       ) %>%
       addScaleBar(position = c("bottomleft"))%>%
@@ -142,35 +114,12 @@ shinyServer(function(input, output) {
         dat<-cbind(lat, long)  
         datalist[[1]] <- dat
         datalist<-data.frame(datalist)
-        ### put in if statement for the larger LA's??????
         mapit %>% 
           setView(lng =  mean(as.numeric(as.character((datalist[,2])))), lat = mean(as.numeric(as.character((datalist[,1])))), zoom = zoomlevel)
         
       } else {
         mapit  %>%  clearMarkers()
       }
-      
-      ######### Getting proper names for graphs
-      #names<-as.data.frame(matrix(c("Alcohol On Sales",
-      #                              "Alcohol Off Sales",
-      #                              "Alcohol Both On and Off Sales","Alcohol Total Sales", 
-      #                              "Tobacco Total Sales", "alcoholOn", "alcoholOff", "alcoholBoth","alcoholTOTAL",
-      #                              "tobaccoTOTAL"), ncol=2, nrow=5))
-      #names(names)<-c("new", "old")
-      #data1<-as.data.frame(input$dataype)
-      #names(data1)<-"old"
-      #names2<-merge(names, data1, by="old", all=F)
-      #names3<-names2 
-      ##################################
-      
-      
-      #### to have default as advanced options hidden
-      #if (!is.null(input$buffer)){
-      #if (input$checkbox_1==T){
-      #  data <- as.character(paste0(input$buffer, input$datatype, input$year, ".csv"))
-      #} else { 
-      #  data <- as.character(paste0("800", input$datatype, "2016", ".csv")) 
-      #}
       
       for (i in input$LAinput){
         Datazone<-readRDS(paste0("geography/DZ/la/", trimws(i), ".rds"))
@@ -316,7 +265,6 @@ shinyServer(function(input, output) {
         HospAdd$ALCOHOL<-sub(",", "", HospAdd$ALCOHOL)
         HospAdd$ALCOHOL<-as.numeric(as.character(HospAdd$ALCOHOL))
         Datazone<-merge(Datazone, HospAdd,by="code")
-        ScottishHospmean<-mean(HospAdd$ALCOHOL)
         ScottishHosp90<-quantile(HospAdd$ALCOHOL, c(.90))
         #LAHospmean<-mean(Datazone@data$ALCOHOL)
         #LAHosp90<-quantile(HospAdd@data$ALCOHOL, c(.90))
@@ -332,10 +280,17 @@ shinyServer(function(input, output) {
         
         ################# Crime
         CrimeAdd<-read.csv(paste0("data/crime.csv"))
-        CrimeAdd$crime_rate<-as.numeric(as.character(CrimeAdd$crime_rate))
         Datazone<-merge(Datazone, CrimeAdd,by="code")
         ScottishCrimeratemean<-mean(CrimeAdd$crime_rate, na.rm=T)
         ScottishCrimerate90<-quantile(CrimeAdd$crime_rate, c(.90), na.rm=T)
+        
+        # Mortality
+        MortAdd<-read.csv("data/Mort.csv")
+        MortAdd$Tobrelated_smr<-as.numeric(MortAdd$Tobrelated_smr)
+        MortAdd$Alcrelated_smr<-as.numeric(MortAdd$Alcrelated_smr)
+        Datazone<-merge(Datazone, MortAdd,by="code")
+        ScottishMortAlc90<-quantile(MortAdd$Alcrelated_smr, c(.90), na.rm=T)
+        ScottishMortTob90<-quantile(MortAdd$Tobrelated_smr, c(.90), na.rm=T)
         
         ## Choices
         Bufferchoice<-input$buffer
@@ -344,6 +299,7 @@ shinyServer(function(input, output) {
         Rankchoice<-input$comparison
         
         ## ugly but needed to get nicely formatted stuff for description in popup
+        Datatypechoice<-sub("alcoholOn",  "On Alcohol Sales", Datatypechoice)        
         Datatypechoice<-sub("alcoholOff",  "Off Alcohol Sales", Datatypechoice)        
         Datatypechoice<-sub("alcoholBoth", "Both On and Off Alcohol Sales", Datatypechoice)    
         Datatypechoice<-sub("alcoholTOTAL", "Total Alcohol Sales", Datatypechoice)    
@@ -360,32 +316,45 @@ shinyServer(function(input, output) {
           pal <- colorNumeric(c("#5d8bba", "#ffffe5", "#d73027"), 1:7)   
           
           ### superscript in leaflet
-          
-          popup <- paste0("<h3>", Datazone$name, "</h3><br>",
+          if (Datatypechoice!="Total Tobacco Sales"){
+          popup <- paste0(
+                          "<h3>", Datazone$name, "</h3><br>",
                           "<b> Description </b> </br>",
                           "This datazone is within the local authority of ", Datazone@data$Councilname,
                           ". You have selected to display density data for ", Datatypechoice, " for ", Yearchoice, ", with the buffer size of ", Bufferchoice," m,"," and colours ", Rankchoice,
                           "</br></br><b>",
-                          Datatypechoice, " Outlet Density </b></br>",
-                          "<ul><li>Density around the population centre is ", round(Datazone@data[,16], 2)," per km<sup>2</sup>.","</li>",
+                          "Outlet Density </b></br>",
+                          "<ul><li>Density around the population centre is ", round(Datazone@data[,16], 1)," per km<sup>2</sup>, which is ", round((Datazone@data[,16]/Datazone$Scottishaverage*100),0), ifelse(round(Datazone@data[,16], 2)>round(Datazone$Scottishaverage, 2) ,"% <font color='#EE2C2C'>higher than</font>", "% of")," the Scottish average.</li>",
+                          "<li>",
+                          ifelse(Datazone@data[,16]>Scottish90th, "This datazone is in the <font color='#EE2C2C'>top 10%</font> of neighbourhoods in Scotland.</li></ul>", "This datazone is not in the top 10% of neighbourhoods in Scotland.</li></ul>"),
+                          "<b> Health </b>",
+                            "<ul><li>The standardised ratio of hospital stays related to alcohol misuse is ", Datazone@data$ALCOHOL,ifelse(Datazone@data$ALCOHOL>ScottishHosp90, ", which is in the <font color='#EE2C2C'>top 10%</font> of neighbourhoods in Scotland.</li>", ", which is not in the top 10% of neighbourhoods in Scotland.</li>"),
+                            "<li>This standardised mortality ratio for alcohol related deaths is ", round(Datazone@data$Alcrelated_smr,0),ifelse(Datazone@data$ALCOHOL>ScottishMortAlc90, ", which is in the <font color='#EE2C2C'>top 10%</font> of neighbourhoods in Scotland.</li></ul>", ", which is not in the top 10% of neighbourhoods in Scotland.</li></ul>"),
+                            "<b> Crime </b></br>",
+                          "<ul><li> The number of recorded crimes of violence, sexual offences, domestic housebreaking, vandalism, drugs offences, and common assault is ", Datazone@data$crime_rate, " per 10,000 people, which is ",round((Datazone@data$crime_rate/ScottishCrimeratemean*100),0), ifelse(round(Datazone@data$crime_rate, 2)>round(ScottishCrimeratemean, 2) ,"% <font color='#EE2C2C'>higher than</font>", "% of")," the Scottish average.</li>", 
+                          "<li>This is ", ifelse(Datazone@data$crime_rate>ScottishCrimerate90, "in the <font color='#EE2C2C'>top 10%</font> of neighbourhoods in Scotland.</li></ul>", "is not in the top 10% of neighbourhoods in Scotland.</li></ul>"),
                           "<br/>",
-                          "<li>This is ", round((Datazone@data[,16]/Datazone$Scottishaverage*100),0), ifelse(round(Datazone@data[,16], 2)>round(Datazone$Scottishaverage, 2) ,"% higher than", "% of")," the Scottish average.</li>",
-                          "<br/><li>",
-                          ifelse(Datazone@data[,16]>Scottish90th, "<font color='#EE2C2C'>This datazone is in the top 10% of neighbourhoods in Scotland.</font></li></ul>", "This datazone is not in the top 10% of neighbourhoods in Scotland.</li></ul>"),
-                          "<b> Health </b></br>",
-                          "<ul><li>The standardised ratio of hospital stays related to alcohol misuse is ", Datazone@data$ALCOHOL, "</li></br>",
-                          "<li>This is ", round((Datazone@data$ALCOHOL/ScottishHospmean*100),0), ifelse(round(Datazone@data$ALCOHOL, 2)>round(ScottishHospmean, 2) ,"% higher than", "% of")," the Scottish average.</li>",
-                          "<br/><li>",
-                          ifelse(Datazone@data$ALCOHOL>ScottishHosp90, "<font color='#EE2C2C'>This datazone is in the top 10% of neighbourhoods in Scotland.</font></li></ul>", "This datazone is not in the top 10% of neighbourhoods in Scotland.</li></ul>"),
-                          "<br/>",
-                          "<b> Crime </b></br>",
-                          "<ul><li> There is ", Datazone@data$crime_rate, " recorded crimes of violence, sexual offences, domestic housebreaking, vandalism, drugs offences, and common assault per 10,000 people.</li></br>",
-                          "<li>This is ", round((Datazone@data$crime_rate/ScottishCrimeratemean*100),0), ifelse(round(Datazone@data$crime_rate, 2)>round(ScottishCrimeratemean, 2) ,"% higher than", "% of")," the Scottish average.</li>",
-                          "<br/><li>",
-                          ifelse(Datazone@data$crime_rate>ScottishCrimerate90, "<font color='#EE2C2C'>This datazone is in the top 10% of neighbourhoods in Scotland.</font></li></ul>", "This datazone is not in the top 10% of neighbourhoods in Scotland.</li></ul>"),
-                          "<br/>",
-                          
                           "<b><a target='_blank' href='http://statistics.gov.scot/doc/statistical-geography/", Datazone$code,"'> Click here for more information available on this datazone</a></b>")
+          }else{
+            popup <- paste0(
+                            "<h3>", Datazone$name, "</h3><br>",
+                            "<b> Description </b> </br>",
+                            "This datazone is within the local authority of ", Datazone@data$Councilname,
+                            ". You have selected to display density data for ", Datatypechoice, " for ", Yearchoice, ", with the buffer size of ", Bufferchoice," m,"," and colours ", Rankchoice,
+                            "</br></br><b>",
+                            "Outlet Density </b></br>",
+                            "<ul><li>Density around the population centre is ", round(Datazone@data[,16], 1)," per km<sup>2</sup>.","</li>",
+                            "<li>This is ", round((Datazone@data[,16]/Datazone$Scottishaverage*100),0), ifelse(round(Datazone@data[,16], 2)>round(Datazone$Scottishaverage, 2) ,"% higher than", "% of")," the Scottish average.</li>",
+                            "<li>",
+                            ifelse(Datazone@data[,16]>Scottish90th, "This datazone is in the <font color='#EE2C2C'>top 10%</font> of neighbourhoods in Scotland.</li></ul>", "This datazone is not in the top 10% of neighbourhoods in Scotland.</li></ul>"),
+                            "<b> Health </b>",
+                            "<ul><li>This standardised mortality ratio for tobacco related deaths is ", round(Datazone@data$Tobrelated_smr,0),ifelse(Datazone@data$ALCOHOL>ScottishMortTob90, ", which is in the <font color='#EE2C2C'>top 10%</font> of neighbourhoods in Scotland.</li></ul>", ", which is not in the top 10% of neighbourhoods in Scotland.</li></ul>"),
+                            "<b> Crime </b></br>",
+                            "<ul><li> The number of recorded crimes of violence, sexual offences, domestic housebreaking, vandalism, drugs offences, and common assault is ", Datazone@data$crime_rate, " per 10,000 people, which is ",round((Datazone@data$crime_rate/ScottishCrimeratemean*100),0), ifelse(round(Datazone@data$crime_rate, 2)>round(ScottishCrimeratemean, 2) ,"% higher than", "% of")," the Scottish average.</li>", 
+                            "<li>This datazone is ", ifelse(Datazone@data$crime_rate>ScottishCrimerate90, "in the <font color='#EE2C2C'>top 10%</font> of neighbourhoods in Scotland.</li></ul>", "is not in the top 10% of neighbourhoods in Scotland.</li></ul>"),
+                            "<br/>",
+                            "<b><a target='_blank' href='http://statistics.gov.scot/doc/statistical-geography/", Datazone$code,"'> Click here for more information available on this datazone</a></b>")
+            }
           
           #################
           mapit  %>%
@@ -422,7 +391,7 @@ shinyServer(function(input, output) {
                         popup=popup,
                         color= ~pal(LAcat4),
                         highlightOptions = highlightOptions(color = "black", weight = 3,
-                                                            bringToFront = TRUE)) 
+                                                            bringToFront = TRUE))
           
         }
         else if(input$comparison=="URBRUR"){
@@ -440,12 +409,6 @@ shinyServer(function(input, output) {
           
           
           mapit %>% 
-            #addPolygons(data=LAoutline,
-            #            stroke=T,
-            #            weight=3,
-            #            color= "black",
-            #            fillOpacity = 0) #%>%
-            
             addPolygons(data=Datazone,
                         stroke=TRUE,
                         weight=0.1,
@@ -473,12 +436,6 @@ shinyServer(function(input, output) {
           
           #####################
           mapit  %>%
-            #addPolygons(data=LAoutline,
-            #            stroke=T,
-            #            weight=3,
-            #            color= "black",
-            #            fillOpacity = 0) #%>%
-            
             addPolygons(data=Datazone,
                         stroke=TRUE,
                         weight=0.1,
@@ -518,29 +475,24 @@ shinyServer(function(input, output) {
     }
   })
   
-  # Zoom in on user location if given
-  
-  
-  
+# Zoom in on user location if given
+
   ## need to clear it with a button!
   location2<-NA
-  
   observe({
     if(!is.null(input$lat)){
-      mapit <- leafletProxy("map")
-      mapit  %>% clearShapes() 
       lat <- input$lat
       long <- input$long
-      
-      
+
       if (!is.na(lat)){
+        mapit <- leafletProxy("map")
         mapit %>% 
           setView(lng =  input$long, lat = input$lat, zoom = 14)
         
       } else {
         mapit  %>% setView(lng =-4.2026, lat = 56.4907, zoom = 7) 
       }
-      
+    
       map<-SpatialPoints(cbind(as.numeric(long),as.numeric(lat)))
       map2<-as.data.frame(cbind(long=as.numeric(long), lat=as.numeric(lat)))
       proj4string(map) <- CRS("+proj=longlat +datum=WGS84")
@@ -555,12 +507,12 @@ shinyServer(function(input, output) {
           Datazone <- spTransform(Datazone, CRS("+proj=longlat +datum=WGS84"))
           # Datazone2 is the datazone location
           Datazone2 <- Datazone[location[1,2], ]
-          buffer<-gBuffer(map, width = 5000)
-          buffer<-spTransform(buffer, proj4string(Datazone))
-          Datazone3 <-gIntersects(Datazone, buffer, byid = T)
-          Datazone3<- as.data.frame(t(Datazone3))
-          Datazone@data <-cbind(Datazone@data, Datazone3)
-          Datazone<-Datazone[Datazone@data$buffer==T, ]
+          #buffer<-gBuffer(map, width = 5000)
+          #buffer<-spTransform(buffer, proj4string(Datazone))
+          #Datazone3 <-gIntersects(Datazone, buffer, byid = T)
+          #Datazone3<- as.data.frame(t(Datazone3))
+          #Datazone@data <-cbind(Datazone@data, Datazone3)
+          #Datazone<-Datazone[Datazone@data$buffer==T, ]
        
           ### get the data in
           data <- as.character(paste0(input$buffer, input$datatype, input$year, ".csv"))
@@ -832,7 +784,6 @@ shinyServer(function(input, output) {
     }
   })
   
-  
   ### gets geolocation manually
   ### To DO: make it so that it zooms in, change up location of fitBounds
   ### Check this out:  http://www.r-graph-gallery.com/2017/03/14/4-tricks-for-working-with-r-leaflet-and-shiny/ 
@@ -870,12 +821,12 @@ shinyServer(function(input, output) {
             Datazone <- spTransform(Datazone, CRS("+proj=longlat +datum=WGS84"))
             # Datazone2 is the datazone location
             Datazone2 <- Datazone[location[1,2], ]
-            buffer<-gBuffer(map, width = 5000)
-            buffer<-spTransform(buffer, proj4string(Datazone))
-            Datazone3 <-gIntersects(Datazone, buffer, byid = T)
-            Datazone3<- as.data.frame(t(Datazone3))
-            Datazone@data <-cbind(Datazone@data, Datazone3)
-            Datazone<-Datazone[Datazone@data$buffer==T, ]
+            #buffer<-gBuffer(map, width = 5000)
+            #buffer<-spTransform(buffer, proj4string(Datazone))
+            #Datazone3 <-gIntersects(Datazone, buffer, byid = T)
+            #Datazone3<- as.data.frame(t(Datazone3))
+            #Datazone@data <-cbind(Datazone@data, Datazone3)
+            #Datazone<-Datazone[Datazone@data$buffer==T, ]
             
             
             ### get the data in
@@ -890,7 +841,7 @@ shinyServer(function(input, output) {
             Datazone$stdareakm2<-NULL
             Datazone$shape_leng<-NULL
             
-            #### Mulitple options- generate variable that is scottish average
+            #### Multiple options- generate variable that is scottish average
             ############################# have to make the categories for SCOTTISH AVERAGE #############################
             
             Datazone@data$SCOcat[Datazone@data[,16]>=(Scotlandmean-0.2*Scotlandmean) & Datazone@data[,16]<=Scotlandmean+(0.15*Scotlandmean)]<-4
@@ -1456,7 +1407,37 @@ shinyServer(function(input, output) {
     add<-read.csv(paste0("data/output/",data))
     add$CODE<-trimws(add$CODE)
     Datazone<-merge(Datazone, add, by.x="datazone", by.y="CODE")
+    # Mort
+    MortAdd<-read.csv("data/Mort.csv")
+    MortAdd$Tobrelated_smr<-as.numeric(MortAdd$Tobrelated_smr)
+    MortAdd$Alcrelated_smr<-as.numeric(MortAdd$Alcrelated_smr)
+    Datazone<-merge(Datazone, MortAdd,by="code")
+    # Hosp
+    HospAdd<-read.csv(paste0("data/Hosp.csv"))
+    HospAdd$ALCOHOL<-sub(",", "", HospAdd$ALCOHOL)
+    HospAdd$ALCOHOL<-as.numeric(as.character(HospAdd$ALCOHOL))
+    Datazone<-merge(Datazone, HospAdd,by="code")
+    # Urban
+    Urban<-read.csv(paste0("data/urbanrural.csv"))
+    Urban$Datazone2011<-Urban[,1]
+    Datazone<-merge(Datazone, Urban, by.x="code", by.y="Datazone2011")
+    Datazone$UR6_2013_2014<-as.numeric(as.character(Datazone$UR6_2013_2014))
+    # SIMD
+    SIMD<-read.csv(paste0("data/SIMD.csv"))
+    Datazone<-merge(Datazone, SIMD, by.x="code", by.y="Data_Zone")
+    Datazone@data$Income_domain_2016_rank<-sub(",", "", Datazone@data$Income_domain_2016_rank)
+    Datazone@data$SIMDrank5<-as.numeric(quantcut(as.numeric(Datazone@data$Income_domain_2016_rank), 5))
+    # Crime
+    Crime<-read.csv(paste0("data/crime.csv"))
+    Datazone<-merge(Datazone, Crime,by="code")
     v<-Datazone@data
+    count<-names(v[17])
+    density<-names(v[18])
+    v<-subset(v, select=c("code", "name", "InterZone", "Intermediate_Zone.y", "Council", "Councilname",count, density, "Tobrelated_smr", "Alcrelated_smr"
+                       , "UR6_2013_2014","ALCOHOL", "SIMDrank5", "crime_rate"))
+    colnames(v)<-c("DZ_2011_code", "DZ_2011_name", "IZ_2011_code", "IZ_2011_name", "LA_code", "LA_name",count, density, "TobMortSMR_2011_2015", "AlcMortSMR_2011_2015",
+                  "UR6_2013_2014","SIMD_2016_AlcHosp", "SIMD_2016_income5", "SIMD_2016_crime"
+                   )
     return(v)
   })
   
