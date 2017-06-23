@@ -84,7 +84,7 @@ shinyServer(function(input, output) {
         baseGroups = c("CartoDB Positron", "Toner", "OSM"),
         options = layersControlOptions(collapsed = TRUE)) %>%
       addLegend("bottomright", 
-               colors=c("#e37779", "#f0a89e", "#fcd0c2", "#fafae9","#d6dade","#b8c9da", "#91b1d4"),
+                colors=c("#e37779", "#f0a89e", "#fcd0c2", "#fafae9","#d6dade","#b8c9da", "#91b1d4"),
                 title = "Outlet Density Rank",
                 labels= c("Highest", "","","Average","","", "Lowest"),
                 opacity = 1
@@ -131,7 +131,7 @@ shinyServer(function(input, output) {
         add<-read.csv(paste0("data/output/",data))
         Scotlandmean<-mean(add[,3])
         Datazone$Scottishaverage<-Scotlandmean
-        Scottish90th<-quantile(add[,3], c(.90)) 
+        Scottish90th<-quantile(add[,3], c(.90),na.rm=T) 
         add$CODE<-trimws(add$CODE)
         Datazone<-merge(Datazone, add, by.x="datazone", by.y="CODE")
         
@@ -229,10 +229,9 @@ shinyServer(function(input, output) {
         Datazone<-merge(Datazone, SIMDCalcAdd,by.x="code", by.y="CODE")
         
         
-        
         ############################# have to make the categories for LA AVERAGE #############################
-        LAmean<-mean(Datazone@data[,16])
-        LA90th<-quantile(Datazone@data[,16], c(.90)) 
+        LAmean<-mean(Datazone@data[,16], na.rm=T)
+        LA90th<-quantile(Datazone@data[,16], c(.90), na.rm=T) 
         # have to make the categories
         Datazone@data$LAcat[Datazone@data[,16]>=(LAmean-0.2*LAmean) & Datazone@data[,16]<=LAmean+(0.15*LAmean)]<-4
         Datazone2<-subset(Datazone, Datazone@data[,16]<(LAmean-0.2*LAmean))
@@ -260,37 +259,119 @@ shinyServer(function(input, output) {
         Datazone@data$LAcat4<-as.numeric(Datazone@data$LAcat4)
         ###################################################################################################################    
         
+        #### POP UP BOX OUTPUT
+    
         ################## Hospital Admissions
         HospAdd<-read.csv(paste0("data/Hosp.csv"))
         HospAdd$ALCOHOL<-sub(",", "", HospAdd$ALCOHOL)
         HospAdd$ALCOHOL<-as.numeric(as.character(HospAdd$ALCOHOL))
         Datazone<-merge(Datazone, HospAdd,by="code")
-        ScottishHosp90<-quantile(HospAdd$ALCOHOL, c(.90))
-        #LAHospmean<-mean(Datazone@data$ALCOHOL)
-        #LAHosp90<-quantile(HospAdd@data$ALCOHOL, c(.90))
-        #SIMDHosp<-merge(HospAdd, add4, by.x="code", by.y="Data_Zone")
-        #SIMDHosp$SIMDrank5<-as.numeric(quantcut(as.numeric(SIMDHosp$Income_domain_2016_rank), 5))
-        #SIMDHosp<-subset(SIMDHosp, select=c(""))
-        #names(SIMDHosp)<-c("SIMDrank5", "SIMDmean")
-        #SIMDCalc<-merge(SIMDmean, SIMD, by="SIMDrank5")
-        #DepHospmean<-aggregate(as.numeric(SIMDHosp$ALCOHOL), by=list(SIMDHosp$SIMDrank5), FUN=mean, na.rm=TRUE)
-        #DepHosp90<-
-        #UrbRurHospmean<-
-        #UrbRurHosp90<-
+        ScottishHospmean<-mean(HospAdd$ALCOHOL, na.rm=T)
+        ScottishHosp90<-quantile(HospAdd$ALCOHOL, c(.90), na.rm=T)
+        LAHospmean<-mean(Datazone@data$ALCOHOL, na.rm=T)
+        LAHosp90<-quantile(Datazone@data$ALCOHOL, c(.90), na.rm=T)
+        
+        # By SIMD
+        HospAdd<-merge(HospAdd, SIMDCalcAdd, by.x="code", by.y="CODE")
+        DepHospmean<-aggregate(as.numeric(HospAdd$ALCOHOL), by=list(HospAdd$SIMDrank5), FUN=mean, na.rm=TRUE)
+        colnames(DepHospmean)<-c("SIMDrank5","HospmeanSIMD")
+        DepHosp90<-data.table(do.call("rbind", tapply(HospAdd$ALCOHOL, HospAdd$SIMDrank5, quantile, c(.90, na.rm=T))))[,1]
+        DepHosp90$SIMDrank5<-rep(1:5)
+        colnames(DepHosp90)<-c("Hosp90SIMD","SIMDrank5")
+        DepHosp<-merge(DepHospmean, DepHosp90, by="SIMDrank5")
+        Datazone<-merge(Datazone, DepHosp, by="SIMDrank5")
+        
         
         ################# Crime
         CrimeAdd<-read.csv(paste0("data/crime.csv"))
         Datazone<-merge(Datazone, CrimeAdd,by="code")
         ScottishCrimeratemean<-mean(CrimeAdd$crime_rate, na.rm=T)
         ScottishCrimerate90<-quantile(CrimeAdd$crime_rate, c(.90), na.rm=T)
+        LACrimemean<-mean(Datazone@data$crime_rate)
+        LACrime90<-quantile(Datazone@data$crime_rate, c(.90), na.rm=T)
         
-        # Mortality
+        
+        # By SIMD
+        CrimeAdd<-merge(CrimeAdd, SIMDCalcAdd, by.x="code", by.y="CODE")
+        DepCrimemean<-aggregate(as.numeric(CrimeAdd$crime_rate), by=list(CrimeAdd$SIMDrank5), FUN=mean, na.rm=TRUE)
+        colnames(DepCrimemean)<-c("SIMDrank5","CrimemeanSIMD")
+        DepCrime90<-data.table(do.call("rbind", tapply(CrimeAdd$crime_rate, CrimeAdd$SIMDrank5, quantile, c(.90, na.rm=T))))[,1]
+        DepCrime90$SIMDrank5<-rep(1:5)
+        colnames(DepCrime90)<-c("Crime90SIMD","SIMDrank5")
+        DepCrime<-merge(DepCrimemean, DepCrime90, by="SIMDrank5")
+        Datazone<-merge(Datazone, DepCrime, by="SIMDrank5")
+        
+        ################# Mortality
         MortAdd<-read.csv("data/Mort.csv")
         MortAdd$Tobrelated_smr<-as.numeric(MortAdd$Tobrelated_smr)
         MortAdd$Alcrelated_smr<-as.numeric(MortAdd$Alcrelated_smr)
         Datazone<-merge(Datazone, MortAdd,by="code")
         ScottishMortAlc90<-quantile(MortAdd$Alcrelated_smr, c(.90), na.rm=T)
         ScottishMortTob90<-quantile(MortAdd$Tobrelated_smr, c(.90), na.rm=T)
+        LAMortTobmean<-mean(Datazone@data$Tobrelated_smr)
+        LAMortTob90<-quantile(Datazone@data$Tobrelated_smr, c(.90), na.rm=T)
+        LAMortAlcmean<-mean(Datazone@data$Alcrelated_smr)
+        LAMortAlc90<-quantile(Datazone@data$Alcrelated_smr, c(.90), na.rm=T)
+        
+        # By SIMD
+        MortAdd<-merge(MortAdd, SIMDCalcAdd, by.x="code", by.y="CODE")
+        
+        DepTobMortmean<-aggregate(as.numeric(MortAdd$Tobrelated_smr), by=list(MortAdd$SIMDrank5), FUN=mean, na.rm=TRUE)
+        colnames(DepTobMortmean)<-c("SIMDrank5","TobMortmeanSIMD")
+        DepTobMort90<-data.table(do.call("rbind", tapply(MortAdd$Tobrelated_smr, MortAdd$SIMDrank5, quantile, c(.90, na.rm=T))))[,1]
+        DepTobMort90$SIMDrank5<-rep(1:5)
+        colnames(DepTobMort90)<-c("TobMort90SIMD","SIMDrank5")
+        DepTobMort<-merge(DepTobMortmean, DepTobMort90, by="SIMDrank5")
+        Datazone<-merge(Datazone, DepTobMort, by="SIMDrank5")
+        
+        DepAlcMortmean<-aggregate(as.numeric(MortAdd$Alcrelated_smr), by=list(MortAdd$SIMDrank5), FUN=mean, na.rm=TRUE)
+        colnames(DepAlcMortmean)<-c("SIMDrank5","AlcMortmeanSIMD")
+        DepAlcMort90<-data.table(do.call("rbind", tapply(MortAdd$Alcrelated_smr, MortAdd$SIMDrank5, quantile, c(.90, na.rm=T))))[,1]
+        DepAlcMort90$SIMDrank5<-rep(1:5)
+        colnames(DepAlcMort90)<-c("AlcMort90SIMD","SIMDrank5")
+        DepAlcMort<-merge(DepAlcMortmean, DepAlcMort90, by="SIMDrank5")
+        Datazone<-merge(Datazone, DepAlcMort, by="SIMDrank5")
+        
+   
+        # by URBAN 
+        UrbAdd<-merge(HospAdd,UrbRurCalcAdd,by.x="code", by="CODE")
+        UrbHospmean<-aggregate(as.numeric(UrbAdd$ALCOHOL), by=list(UrbAdd$UR6_2013_2014), FUN=mean, na.rm=TRUE)
+        colnames(UrbHospmean)<-c("UR6_2013_2014","HospmeanUrb")
+        UrbHosp90<-data.table(do.call("rbind", tapply(UrbAdd$ALCOHOL, UrbAdd$UR6_2013_2014, quantile, c(.90, na.rm=T))))[,1]
+        UrbHosp90$UR6_2013_2014<-rep(1:6)
+        colnames(UrbHosp90)<-c("Hosp90Urb","UR6_2013_2014")
+        UrbHosp<-merge(UrbHospmean, UrbHosp90, by="UR6_2013_2014")
+        Datazone<-merge(Datazone, UrbHosp, by="UR6_2013_2014")
+        
+        # by URBAN 
+        UrbAdd<-merge(CrimeAdd,UrbRurCalcAdd,by.x="code", by="CODE")
+        UrbCrimemean<-aggregate(as.numeric(UrbAdd$crime_rate), by=list(UrbAdd$UR6_2013_2014), FUN=mean, na.rm=TRUE)
+        colnames(UrbCrimemean)<-c("UR6_2013_2014","CrimemeanUrb")
+        UrbCrime90<-data.table(do.call("rbind", tapply(UrbAdd$crime_rate, UrbAdd$UR6_2013_2014, quantile, c(.90, na.rm=T))))[,1]
+        UrbCrime90$UR6_2013_2014<-rep(1:6)
+        colnames(UrbCrime90)<-c("Crime90Urb","UR6_2013_2014")
+        UrbCrime<-merge(UrbCrimemean, UrbCrime90, by="UR6_2013_2014")
+        Datazone<-merge(Datazone, UrbCrime, by="UR6_2013_2014")
+        
+        # By Urban
+        MortAdd<-merge(MortAdd, UrbRurCalcAdd, by.x="code", by.y="CODE")
+        UrbTobMortmean<-aggregate(as.numeric(MortAdd$Tobrelated_smr), by=list(MortAdd$UR6_2013_2014), FUN=mean, na.rm=TRUE)
+        colnames(UrbTobMortmean)<-c("UR6_2013_2014","TobMortmeanSIMD")
+        UrbTobMort90<-data.table(do.call("rbind", tapply(MortAdd$Tobrelated_smr, MortAdd$UR6_2013_2014, quantile, c(.90, na.rm=T))))[,1]
+        UrbTobMort90$UR6_2013_2014<-rep(1:6)
+        colnames(UrbTobMort90)<-c("TobMort90Urb","UR6_2013_2014")
+        UrbTobMort<-merge(UrbTobMortmean, UrbTobMort90, by="UR6_2013_2014")
+        Datazone<-merge(Datazone, UrbTobMort, by="UR6_2013_2014")
+        
+        UrbAlcMortmean<-aggregate(as.numeric(MortAdd$Alcrelated_smr), by=list(MortAdd$UR6_2013_2014), FUN=mean, na.rm=TRUE)
+        colnames(UrbAlcMortmean)<-c("UR6_2013_2014","AlcMortmeanSIMD")
+        UrbAlcMort90<-data.table(do.call("rbind", tapply(MortAdd$Alcrelated_smr, MortAdd$UR6_2013_2014, quantile, c(.90, na.rm=T))))[,1]
+        UrbAlcMort90$UR6_2013_2014<-rep(1:6)
+        colnames(UrbAlcMort90)<-c("AlcMort90Urb","UR6_2013_2014")
+        UrbAlcMort<-merge(UrbAlcMortmean, UrbAlcMort90, by="UR6_2013_2014")
+        Datazone<-merge(Datazone, UrbAlcMort, by="UR6_2013_2014")
+        
+        # desnity is 18 for Urban models
         
         ## Choices
         Bufferchoice<-input$buffer
@@ -317,44 +398,43 @@ shinyServer(function(input, output) {
           
           ### superscript in leaflet
           if (Datatypechoice!="Total Tobacco Sales"){
-          popup <- paste0(
-                          "<h3>", Datazone$name, "</h3><br>",
-                          "<b> Description </b> </br>",
-                          "This datazone is within the local authority of ", Datazone@data$Councilname,
-                          ". You have selected to display density data for ", Datatypechoice, " for ", Yearchoice, ", with the buffer size of ", Bufferchoice," m,"," and colours ", Rankchoice,
-                          "</br></br><b>",
-                          "Outlet Density </b></br>",
-                          "<ul><li>Density around the population centre is ", round(Datazone@data[,16], 1)," per km<sup>2</sup>, which is ", round((Datazone@data[,16]/Datazone$Scottishaverage*100),0), ifelse(round(Datazone@data[,16], 2)>round(Datazone$Scottishaverage, 2) ,"% <font color='#EE2C2C'>higher than</font>", "% of")," the Scottish average.</li>",
-                          "<li>",
-                          ifelse(Datazone@data[,16]>Scottish90th, "This datazone is in the <font color='#EE2C2C'>top 10%</font> of neighbourhoods in Scotland.</li></ul>", "This datazone is not in the top 10% of neighbourhoods in Scotland.</li></ul>"),
-                          "<b> Health </b>",
-                            "<ul><li>The standardised ratio of hospital stays related to alcohol misuse is ", Datazone@data$ALCOHOL,ifelse(Datazone@data$ALCOHOL>ScottishHosp90, ", which is in the <font color='#EE2C2C'>top 10%</font> of neighbourhoods in Scotland.</li>", ", which is not in the top 10% of neighbourhoods in Scotland.</li>"),
-                            "<li>This standardised mortality ratio for alcohol related deaths is ", round(Datazone@data$Alcrelated_smr,0),ifelse(Datazone@data$ALCOHOL>ScottishMortAlc90, ", which is in the <font color='#EE2C2C'>top 10%</font> of neighbourhoods in Scotland.</li></ul>", ", which is not in the top 10% of neighbourhoods in Scotland.</li></ul>"),
-                            "<b> Crime </b></br>",
-                          "<ul><li> The number of recorded crimes of violence, sexual offences, domestic housebreaking, vandalism, drugs offences, and common assault is ", Datazone@data$crime_rate, " per 10,000 people, which is ",round((Datazone@data$crime_rate/ScottishCrimeratemean*100),0), ifelse(round(Datazone@data$crime_rate, 2)>round(ScottishCrimeratemean, 2) ,"% <font color='#EE2C2C'>higher than</font>", "% of")," the Scottish average.</li>", 
-                          "<li>This is ", ifelse(Datazone@data$crime_rate>ScottishCrimerate90, "in the <font color='#EE2C2C'>top 10%</font> of neighbourhoods in Scotland.</li></ul>", "is not in the top 10% of neighbourhoods in Scotland.</li></ul>"),
-                          "<br/>",
-                          "<b><a target='_blank' href='http://statistics.gov.scot/doc/statistical-geography/", Datazone$code,"'> Click here for more information available on this datazone</a></b>")
+            popup <- paste0(
+              "<h3>", Datazone$name, "</h3><br>",
+              "<b> Description </b> </br>",
+              "This datazone is within the local authority of ", Datazone@data$Councilname,
+              ". You have selected to display density data for ", Datatypechoice, " for ", Yearchoice, ", with the buffer size of ", Bufferchoice," m,"," and colours ", Rankchoice,
+              "</br></br><b>",
+              "Outlet Density </b></br>",
+              "<ul><li>Density around the population centre is ", round(Datazone@data[,18], 1)," per km<sup>2</sup>, which is ", round((Datazone@data[,18]/Datazone$Scottishaverage*100),0), ifelse(round(Datazone@data[,18], 2)>round(Datazone$Scottishaverage, 2) ,"% of", "% of")," the Scottish average.</li>",
+              "<li>",
+              ifelse(Datazone@data[,18]>Scottish90th, "This datazone is in the <font color='#EE2C2C'>top 10%</font> of neighbourhoods in Scotland.</li></ul>", "This datazone is not in the top 10% of neighbourhoods in Scotland.</li></ul>"),
+              "<b> Health </b>",
+              "<ul><li>The standardised ratio of hospital stays related to alcohol misuse is ", Datazone@data$ALCOHOL,ifelse(Datazone@data$ALCOHOL>ScottishHosp90, ", which is in the <font color='#EE2C2C'>top 10%</font> of neighbourhoods in Scotland.</li>", ", which is not in the top 10% of neighbourhoods in Scotland.</li>"),
+              "<li>This standardised mortality ratio for alcohol related deaths is ", round(Datazone@data$Alcrelated_smr,0),ifelse(Datazone@data$ALCOHOL>ScottishMortAlc90, ", which is in the <font color='#EE2C2C'>top 10%</font> of neighbourhoods in Scotland.</li></ul>", ", which is not in the top 10% of neighbourhoods in Scotland.</li></ul>"),
+              "<b> Crime </b></br>",
+              "<ul><li> The number of recorded crimes of violence, sexual offences, domestic housebreaking, vandalism, drugs offences, and common assault is ", Datazone@data$crime_rate, " per 10,000 people, which is ",round((Datazone@data$crime_rate/ScottishCrimeratemean*100),0), ifelse(round(Datazone@data$crime_rate, 2)>round(ScottishCrimeratemean, 2) ,"% of", "% of")," the Scottish average.</li>", 
+              "<li>This datazone is ", ifelse(Datazone@data$crime_rate>ScottishCrimerate90, "in the <font color='#EE2C2C'>top 10%</font> of neighbourhoods in Scotland.</li></ul>", "is not in the top 10% of neighbourhoods in Scotland.</li></ul>"),
+              "<br/>",
+              "<b><a target='_blank' href='http://statistics.gov.scot/doc/statistical-geography/", Datazone$code,"'> Click here for more information available on this datazone</a></b>")
           }else{
             popup <- paste0(
-                            "<h3>", Datazone$name, "</h3><br>",
-                            "<b> Description </b> </br>",
-                            "This datazone is within the local authority of ", Datazone@data$Councilname,
-                            ". You have selected to display density data for ", Datatypechoice, " for ", Yearchoice, ", with the buffer size of ", Bufferchoice," m,"," and colours ", Rankchoice,
-                            "</br></br><b>",
-                            "Outlet Density </b></br>",
-                            "<ul><li>Density around the population centre is ", round(Datazone@data[,16], 1)," per km<sup>2</sup>.","</li>",
-                            "<li>This is ", round((Datazone@data[,16]/Datazone$Scottishaverage*100),0), ifelse(round(Datazone@data[,16], 2)>round(Datazone$Scottishaverage, 2) ,"% higher than", "% of")," the Scottish average.</li>",
-                            "<li>",
-                            ifelse(Datazone@data[,16]>Scottish90th, "This datazone is in the <font color='#EE2C2C'>top 10%</font> of neighbourhoods in Scotland.</li></ul>", "This datazone is not in the top 10% of neighbourhoods in Scotland.</li></ul>"),
-                            "<b> Health </b>",
-                            "<ul><li>This standardised mortality ratio for tobacco related deaths is ", round(Datazone@data$Tobrelated_smr,0),ifelse(Datazone@data$ALCOHOL>ScottishMortTob90, ", which is in the <font color='#EE2C2C'>top 10%</font> of neighbourhoods in Scotland.</li></ul>", ", which is not in the top 10% of neighbourhoods in Scotland.</li></ul>"),
-                            "<b> Crime </b></br>",
-                            "<ul><li> The number of recorded crimes of violence, sexual offences, domestic housebreaking, vandalism, drugs offences, and common assault is ", Datazone@data$crime_rate, " per 10,000 people, which is ",round((Datazone@data$crime_rate/ScottishCrimeratemean*100),0), ifelse(round(Datazone@data$crime_rate, 2)>round(ScottishCrimeratemean, 2) ,"% higher than", "% of")," the Scottish average.</li>", 
-                            "<li>This datazone is ", ifelse(Datazone@data$crime_rate>ScottishCrimerate90, "in the <font color='#EE2C2C'>top 10%</font> of neighbourhoods in Scotland.</li></ul>", "is not in the top 10% of neighbourhoods in Scotland.</li></ul>"),
-                            "<br/>",
-                            "<b><a target='_blank' href='http://statistics.gov.scot/doc/statistical-geography/", Datazone$code,"'> Click here for more information available on this datazone</a></b>")
-            }
+              "<h3>", Datazone$name, "</h3><br>",
+              "<b> Description </b> </br>",
+              "This datazone is within the local authority of ", Datazone@data$Councilname,
+              ". You have selected to display density data for ", Datatypechoice, " for ", Yearchoice, ", with the buffer size of ", Bufferchoice," m,"," and colours ", Rankchoice,
+              "</br></br><b>",
+              "Outlet Density </b></br>",
+              "<ul><li>Density around the population centre is ", round(Datazone@data[,18], 1)," per km<sup>2</sup>, which is ", round((Datazone@data[,18]/Datazone$Scottishaverage*100),0), ifelse(round(Datazone@data[,18], 2)>round(Datazone$Scottishaverage, 2) ,"% of", "% of")," the Scottish average.</li>",
+              "<li>",
+              ifelse(Datazone@data[,18]>Scottish90th, "This datazone is in the <font color='#EE2C2C'>top 10%</font> of neighbourhoods in Scotland.</li></ul>", "This datazone is not in the top 10% of neighbourhoods in Scotland.</li></ul>"),
+              "<b> Health </b>",
+              "<ul><li>The standardised mortality ratio for tobaccco related deaths is ", round(Datazone@data$Tobrelated_smr,0),ifelse(Datazone@data$ALCOHOL>ScottishMortTob90, ", which is in the <font color='#EE2C2C'>top 10%</font> of neighbourhoods in Scotland.</li></ul>", ", which is not in the top 10% of neighbourhoods in Scotland.</li></ul>"),
+              "<b> Crime </b></br>",
+              "<ul><li> The number of recorded crimes of violence, sexual offences, domestic housebreaking, vandalism, drugs offences, and common assault is ", Datazone@data$crime_rate, " per 10,000 people, which is ",round((Datazone@data$crime_rate/ScottishCrimeratemean*100),0), ifelse(round(Datazone@data$crime_rate, 2)>round(ScottishCrimeratemean, 2) ,"% of", "% of")," the Scottish average.</li>", 
+              "<li>This datazone is ", ifelse(Datazone@data$crime_rate>ScottishCrimerate90, "in the <font color='#EE2C2C'>top 10%</font> of neighbourhoods in Scotland.</li></ul>", "is not in the top 10% of neighbourhoods in Scotland.</li></ul>"),
+              "<br/>",
+              "<b><a target='_blank' href='http://statistics.gov.scot/doc/statistical-geography/", Datazone$code,"'> Click here for more information available on this datazone</a></b>")
+          }
           
           #################
           mapit  %>%
@@ -371,17 +451,44 @@ shinyServer(function(input, output) {
         }
         else if(input$comparison=="LA"){
           pal <- colorNumeric(c("#5d8bba", "#ffffe5", "#d73027"), 1:7)   
-          
-          popup <- paste0("<h3>", Datazone$name, "</h3><br>",
-                          "Density around the population centre is ", "<strong>", round(Datazone@data[,16], 2)," per km2","</strong>",
-                          "<br/>",
-                          "This is <strong>", round((Datazone@data[,16]/LAmean*100),0), ifelse(round(Datazone@data[,16], 2)>round(LAmean, 2) ,"% higher than</strong>", "%</strong> of")," the ", input$LAinput, " average",
-                          "<br/>",
-                          ifelse(Datazone@data[,16]>LA90th, paste0("<strong><font color='#EE2C2C'>This datazone is in the top 10% of neighbourhoods in ", input$LAinput, "</font></strong>"), ""),
-                          "<br/>",
-                          "<br/>",
-                          " More information available on this datazone ", "<b><a target='_blank' href='http://statistics.gov.scot/doc/statistical-geography/", Datazone$code,"'>here</a></b>")
-          
+          if (Datatypechoice!="Total Tobacco Sales"){
+            popup <- paste0(
+              "<h3>", Datazone$name, "</h3><br>",
+              "<b> Description </b> </br>",
+              "This datazone is within the local authority of ", Datazone@data$Councilname,
+              ". You have selected to display density data for ", Datatypechoice, " for ", Yearchoice, ", with the buffer size of ", Bufferchoice," m,"," and colours ", Rankchoice,
+              "</br></br><b>",
+              "Outlet Density </b></br>",
+              "<ul><li>Density around the population centre is ", round(Datazone@data[,18], 1)," per km<sup>2</sup>, which is ", round((Datazone@data[,18]/LAmean*100),0), ifelse(round(Datazone@data[,18], 2)>round(LAmean, 2) ,"% of", "% of")," the ", input$LAinput, " average.</li>",
+              "<li>",
+              ifelse(Datazone@data[,18]>LA90th, paste0("This datazone is in the <font color='#EE2C2C'>top 10%</font> of neighbourhoods in ", input$LAinput,".</li></ul>"), paste0("This datazone is not in the top 10% of neighbourhoods in ", input$LAinput,".</li></ul>")),
+              "<b> Health </b>",
+              "<ul><li>The standardised ratio of hospital stays related to alcohol misuse is ", Datazone@data$ALCOHOL,ifelse(Datazone@data$ALCOHOL>LAHospmean, paste0(", which is in the <font color='#EE2C2C'>top 10%</font> of neighbourhoods in ", input$LAinput,".</li>"), paste0(", which is not in the top 10% of neighbourhoods in ",input$LAinput,".</li>")),
+              "<li>This standardised mortality ratio for alcohol related deaths is ", round(Datazone@data$Alcrelated_smr,0),ifelse(Datazone@data$ALCOHOL>LAMortAlc90, paste0(", which is in the <font color='#EE2C2C'>top 10%</font> of neighbourhoods in ", input$LAinput,".</li></ul>"), paste0(", which is not in the top 10% of neighbourhoods in ", input$LAinput,".</li></ul>")),
+              "<b> Crime </b></br>",
+              "<ul><li> The number of recorded crimes of violence, sexual offences, domestic housebreaking, vandalism, drugs offences, and common assault is ", Datazone@data$crime_rate, " per 10,000 people, which is ",round((Datazone@data$crime_rate/LACrimemean*100),0), ifelse(round(Datazone@data$crime_rate, 2)>round(LACrimemean, 2) , paste0("% of the ", input$LAinput," average.</li>"), paste0("% of the ", input$LAinput," average.</li>")),
+              "<li>This datazone is ", ifelse(Datazone@data$crime_rate>LACrime90, paste0("in the <font color='#EE2C2C'>top 10%</font> of neighbourhoods in ", input$LAinput,".</li></ul>"), paste0(" is not in the top 10% of neighbourhoods in ", input$LAinput,".</li></ul>")),
+              "<br/>",                  
+              "<b><a target='_blank' href='http://statistics.gov.scot/doc/statistical-geography/", Datazone$code,"'> Click here for more information available on this datazone</a></b>")
+          }else{
+            popup <- paste0(
+              "<h3>", Datazone$name, "</h3><br>",
+              "<b> Description </b> </br>",
+              "This datazone is within the local authority of ", Datazone@data$Councilname,
+              ". You have selected to display density data for ", Datatypechoice, " for ", Yearchoice, ", with the buffer size of ", Bufferchoice," m,"," and colours ", Rankchoice,
+              "</br></br><b>",
+              "Outlet Density </b></br>",
+              "<ul><li>Density around the population centre is ", round(Datazone@data[,18], 1)," per km<sup>2</sup>, which is ", round((Datazone@data[,18]/LAmean*100),0), ifelse(round(Datazone@data[,18], 2)>round(LAmean, 2) ,"% of", "% of")," the ", input$LAinput, " average.</li>",
+              "<li>",
+              ifelse(Datazone@data[,18]>LA90th, "This datazone is in the <font color='#EE2C2C'>top 10%</font> of neighbourhoods in Scotland.</li></ul>", "This datazone is not in the top 10% of neighbourhoods in Scotland.</li></ul>"),
+              "<b> Health </b>",
+              "<ul><li>This standardised mortality ratio for tobacco related deaths is ", round(Datazone@data$Tobrelated_smr,0),ifelse(Datazone@data$TOBACCO>LAMortTob90, paste0(", which is in the <font color='#EE2C2C'>top 10%</font> of neighbourhoods in", input$LAinput,".</li></ul>"), paste0(", which is not in the top 10% of neighbourhoods in ", input$LAinput,".</li></ul>")),
+              "<b> Crime </b></br>",
+              "<ul><li> The number of recorded crimes of violence, sexual offences, domestic housebreaking, vandalism, drugs offences, and common assault is ", Datazone@data$crime_rate, " per 10,000 people, which is ",round((Datazone@data$crime_rate/LACrimemean*100),0), ifelse(round(Datazone@data$crime_rate, 2)>round(LACrimemean, 2) , paste0("% of the ", input$LAinput," average.</li>"), paste0("% of the ", input$LAinput," average.</li>")),
+              "<li>This datazone is ", ifelse(Datazone@data$crime_rate>LACrime90, paste0("in the <font color='#EE2C2C'>top 10%</font> of neighbourhoods in ", input$LAinput,".</li></ul>"), paste0(" is not in the top 10% of neighbourhoods in ", input$LAinput,".</li></ul>")),
+              "<br/>",                  
+              "<b><a target='_blank' href='http://statistics.gov.scot/doc/statistical-geography/", Datazone$code,"'> Click here for more information available on this datazone</a></b>")
+          }
           mapit  %>%     
             addPolygons(data=Datazone,
                         stroke=TRUE,
@@ -396,18 +503,44 @@ shinyServer(function(input, output) {
         }
         else if(input$comparison=="URBRUR"){
           pal <- colorNumeric(c("#5d8bba", "#ffffe5", "#d73027"), 1:7)   
-          
-          popup <- paste0("<h3>", Datazone$name, "</h3><br>",
-                          "Density around the population centre is ", "<strong>", round(Datazone@data[,16], 2)," per km2","</strong>",
-                          "<br/>",
-                          "This is <strong>", round((Datazone@data[,16]/Datazone$UR6_2013_2014mean*100),0), ifelse(round(Datazone@data[,16], 2)>round(Datazone$UR6_2013_2014mean, 2) ,"% higher than</strong>", "%</strong> of")," the Urban Rural Classification (6-Fold) Group ", Datazone$UR6_2013_2014, " average",
-                          "<br/>",
-                          ifelse(Datazone@data[,16]>Datazone$UR6_2013_201490, paste0("<strong><font color='#EE2C2C'>This datazone is in the top 10% of neighbourhoods in the Urban Rural Classification (6-Fold) Group ", Datazone$UR6_2013_2014, "</font></strong>"), ""),
-                          "<br/>",
-                          "<br/>",
-                          " More information available on this datazone ", "<b><a target='_blank' href='http://statistics.gov.scot/doc/statistical-geography/", Datazone$code,"'>here</a></b>")
-          
-          
+          if (Datatypechoice!="Total Tobacco Sales"){
+            popup <- paste0(
+              "<h3>", Datazone$name, "</h3><br>",
+              "<b> Description </b> </br>",
+              "This datazone is within the local authority of ", Datazone@data$Councilname,
+              ". You have selected to display density data for ", Datatypechoice, " for ", Yearchoice, ", with the buffer size of ", Bufferchoice," m,"," and colours ", Rankchoice,
+              "</br></br><b>",
+              "Outlet Density </b></br>",
+              "<ul><li>Density around the population centre is ", round(Datazone@data[,18], 1)," per km<sup>2</sup>, which is ", round((Datazone@data[,18]/Datazone$UR6_2013_2014mean*100),0), ifelse(round(Datazone@data[,18], 2)>round(Datazone$UR6_2013_2014mean, 2) ,"% of", "% of")," the Urban/Rural group ", Datazone@data$UR6_2013_2014, " average.</li>",
+              "<li>",
+              ifelse(Datazone@data[,18]>Datazone@data$UR6_2013_201490, paste0("This datazone is in the <font color='#EE2C2C'>top 10%</font> of neighbourhoods in Urban/rural group ", Datazone@data$UR6_2013_2014,".</li></ul>"), paste0("This datazone is not in the top 10% of neighbourhoods in Urban/Rural group ", Datazone@data$UR6_2013_2014,".</li></ul>")),
+              "<b> Health </b>",
+              "<ul><li>The standardised ratio of hospital stays related to alcohol misuse is ", Datazone@data$ALCOHOL,ifelse(Datazone@data$ALCOHOL>Datazone@data$Hosp90Urb, paste0(", which is in the <font color='#EE2C2C'>top 10%</font> of neighbourhoods in Urban/Rural group ", Datazone@data$UR6_2013_2014,".</li>"), paste0(", which is not in the top 10% of neighbourhoods in Urban/Rural group ",Datazone@data$UR6_2013_2014,".</li>")),
+              "<li>This standardised mortality ratio for alcohol related deaths is ", round(Datazone@data$Alcrelated_smr,0),ifelse(Datazone@data$ALCOHOL>Datazone@data$AlcMort90Urb, paste0(", which is in the <font color='#EE2C2C'>top 10%</font> of neighbourhoods in Urban/Rural group ", Datazone@data$UR6_2013_2014, ".</li></ul>"), paste0(", which is not in the top 10% of neighbourhoods in Urban/Rural group ", Datazone@data$UR6_2013_2014,".</li></ul>")),
+              "<b> Crime </b></br>",
+              "<ul><li> The number of recorded crimes of violence, sexual offences, domestic housebreaking, vandalism, drugs offences, and common assault is ", Datazone@data$crime_rate, " per 10,000 people, which is ",round((Datazone@data$crime_rate/Datazone@data$CrimemeanUrb*100),0), ifelse(round(Datazone@data$crime_rate, 2)>round(Datazone@data$CrimemeanUrb, 2) , paste0("% of the Urban/Rural group ", Datazone@data$UR6_2013_2014," average.</li>"), paste0("% of the Urban/Rural group ", Datazone@data$UR6_2013_2014," average.</li>")),
+              "<li>This datazone is ", ifelse(Datazone@data$crime_rate>Datazone@data$Crime90Urb, paste0("in the <font color='#EE2C2C'>top 10%</font> of neighbourhoods in Urban/Rural group ", Datazone@data$UR6_2013_2014,".</li></ul>"), paste0(" is not in the top 10% of neighbourhoods in Urban/Rural group ", Datazone@data$UR6_2013_2014,".</li></ul>")),
+              "<br/>",                  
+              "<b><a target='_blank' href='http://statistics.gov.scot/doc/statistical-geography/", Datazone$code,"'> Click here for more information available on this datazone</a></b>")
+          }else{
+            popup <- paste0(
+              "<h3>", Datazone$name, "</h3><br>",
+              "<b> Description </b> </br>",
+              "This datazone is within the local authority of ", Datazone@data$Councilname,
+              ". You have selected to display density data for ", Datatypechoice, " for ", Yearchoice, ", with the buffer size of ", Bufferchoice," m,"," and colours ", Rankchoice,
+              "</br></br><b>",
+              "Outlet Density </b></br>",
+              "<ul><li>Density around the population centre is ", round(Datazone@data[,18], 1)," per km<sup>2</sup>, which is ", round((Datazone@data[,18]/Datazone$UR6_2013_2014mean*100),0), ifelse(round(Datazone@data[,18], 2)>round(Datazone$UR6_2013_2014mean, 2) ,"% of", "% of")," the Urban/Rural group ", Datazone@data$UR6_2013_2014, " average.</li>",
+              "<li>",
+              ifelse(Datazone@data[,18]>Datazone$Urb90, paste0("This datazone is in the <font color='#EE2C2C'>top 10%</font> of neighbourhoods in Urban/Rural group ", Datazone@data$UR6_2013_2014,".</li></ul>"), paste0("This datazone is not in the top 10% of neighbourhoods in Urban/Rural group ", Datazone@data$UR6_2013_2014,".</li></ul>")),
+              "<b> Health </b>",
+              "<ul><li>This standardised mortality ratio for tobacco related deaths is ", round(Datazone@data$Tobrelated_smr,0),ifelse(Datazone@data$Tobrelated_smr>Datazone@data$TobMort90Urb, paste0(", which is in the <font color='#EE2C2C'>top 10%</font> of neighbourhoods in Urban/Rural group ", Datazone@data$UR6_2013_2014, ".</li></ul>"), paste0(", which is not in the top 10% of neighbourhoods in Urban/Rural group ", Datazone@data$UR6_2013_2014,".</li></ul>")),
+              "<b> Crime </b></br>",
+              "<ul><li> The number of recorded crimes of violence, sexual offences, domestic housebreaking, vandalism, drugs offences, and common assault is ", Datazone@data$crime_rate, " per 10,000 people, which is ",round((Datazone@data$crime_rate/Datazone@data$CrimemeanUrb*100),0), ifelse(round(Datazone@data$crime_rate, 2)>round(Datazone@data$CrimemeanUrb, 2) , paste0("% of the Urban/Rural group ", Datazone@data$UR6_2013_2014," average.</li>"), paste0("% of the Urban/Rural group ", Datazone@data$UR6_2013_2014," average.</li>")),
+              "<li>This datazone is ", ifelse(Datazone@data$crime_rate>Datazone@data$Crime90Urb, paste0("in the <font color='#EE2C2C'>top 10%</font> of neighbourhoods in Urban/Rural group ", Datazone@data$UR6_2013_2014,".</li></ul>"), paste0(" is not in the top 10% of neighbourhoods in Urban/Rural group ", Datazone@data$UR6_2013_2014,".</li></ul>")),
+              "<br/>",                  
+              "<b><a target='_blank' href='http://statistics.gov.scot/doc/statistical-geography/", Datazone$code,"'> Click here for more information available on this datazone</a></b>")
+          }
           mapit %>% 
             addPolygons(data=Datazone,
                         stroke=TRUE,
@@ -423,17 +556,44 @@ shinyServer(function(input, output) {
         else if(input$comparison=="SIMD"){
           pal <- colorNumeric(c("#5d8bba", "#ffffe5", "#d73027"), 1:7)   
           
-          ### superscript in leaflet
-          popup <- paste0("<h3>", Datazone$name, "</h3><br>",
-                          "Density around the population centre is ", "<strong>", round(Datazone@data[,16], 2)," per km2","</strong>",
-                          "<br/>",
-                          "This is <strong>", round((Datazone@data[,16]/Datazone$SIMDmean*100),0), ifelse(round(Datazone@data[,16], 2)>round(Datazone$SIMDmean, 2) ,"% higher than</strong>", "% of</strong>")," the Scottish Index of Multiple Deprivation Quintile Group ", Datazone$SIMDrank5, " average",
-                          "<br/>",
-                          ifelse(Datazone@data[,16]>Datazone$SIMD90, paste0("<strong><font color='#EE2C2C'>This datazone is in the top 10% of neighbourhoods in the Scottish Index of Multiple Deprivation Quintile Group ", Datazone$SIMDrank5, "</font></strong>"), ""),
-                          "<br/>",
-                          "<br/>",
-                          " More information available on this datazone ", "<b><a target='_blank' href='http://statistics.gov.scot/doc/statistical-geography/", Datazone$code,"'>here</a></b>")
-          
+          if (Datatypechoice!="Total Tobacco Sales"){
+            popup <- paste0(
+              "<h3>", Datazone$name, "</h3><br>",
+              "<b> Description </b> </br>",
+              "This datazone is within the local authority of ", Datazone@data$Councilname,
+              ". You have selected to display density data for ", Datatypechoice, " for ", Yearchoice, ", with the buffer size of ", Bufferchoice," m,"," and colours ", Rankchoice,
+              "</br></br><b>",
+              "Outlet Density </b></br>",
+              "<ul><li>Density around the population centre is ", round(Datazone@data[,18], 1)," per km<sup>2</sup>, which is ", round((Datazone@data[,18]/Datazone@data$SIMDmean*100),0), ifelse(round(Datazone@data[,18], 2)>round(Datazone@data$SIMDmean, 2) ,"% of", "% of")," the SIMD income group ", Datazone@data$SIMDrank5, " average.</li>",
+              "<li>",
+              ifelse(Datazone@data[,18]>Datazone$SIMD90, paste0("This datazone is in the <font color='#EE2C2C'>top 10%</font> of neighbourhoods in SIMD income group ", Datazone@data$SIMDrank5,".</li></ul>"), paste0("This datazone is not in the top 10% of neighbourhoods in SIMD income group ", Datazone@data$SIMDrank5,".</li></ul>")),
+              "<b> Health </b>",
+              "<ul><li>The standardised ratio of hospital stays related to alcohol misuse is ", Datazone@data$ALCOHOL,ifelse(Datazone@data$ALCOHOL>Datazone@data$HospmeanSIMD, paste0(", which is in the <font color='#EE2C2C'>top 10%</font> of neighbourhoods in SIMD income group ", Datazone@data$SIMDrank5,".</li>"), paste0(", which is not in the top 10% of neighbourhoods in SIMD income group ",Datazone@data$SIMDrank5,".</li>")),
+              "<li>This standardised mortality ratio for alcohol related deaths is ", round(Datazone@data$Alcrelated_smr,0),ifelse(Datazone@data$ALCOHOL>Datazone@data$AlcMort90SIMD, paste0(", which is in the <font color='#EE2C2C'>top 10%</font> of neighbourhoods in SIMD income group ", Datazone@data$SIMDrank5, ".</li></ul>"), paste0(", which is not in the top 10% of neighbourhoods in SIMD income group ", Datazone@data$SIMDrank5,".</li></ul>")),
+              "<b> Crime </b></br>",
+              "<ul><li> The number of recorded crimes of violence, sexual offences, domestic housebreaking, vandalism, drugs offences, and common assault is ", Datazone@data$crime_rate, " per 10,000 people, which is ",round((Datazone@data$crime_rate/Datazone@data$CrimemeanSIMD*100),0), ifelse(round(Datazone@data$crime_rate, 2)>round(Datazone@data$CrimemeanSIMD, 2) , paste0("% of the SIMD income group ", Datazone@data$SIMDrank5," average.</li>"), paste0("% of the SIMD income group ", Datazone@data$SIMDrank5," average.</li>")),
+              "<li>This datazone is ", ifelse(Datazone@data$crime_rate>Datazone@data$Crime90SIMD, paste0("in the <font color='#EE2C2C'>top 10%</font> of neighbourhoods in SIMD income group ", Datazone@data$SIMDrank5,".</li></ul>"), paste0(" is not in the top 10% of neighbourhoods in SIMD income group ", Datazone@data$SIMDrank5,".</li></ul>")),
+              "<br/>",                  
+              "<b><a target='_blank' href='http://statistics.gov.scot/doc/statistical-geography/", Datazone$code,"'> Click here for more information available on this datazone</a></b>")
+          }else{
+            popup <- paste0(
+              "<h3>", Datazone$name, "</h3><br>",
+              "<b> Description </b> </br>",
+              "This datazone is within the local authority of ", Datazone@data$Councilname,
+              ". You have selected to display density data for ", Datatypechoice, " for ", Yearchoice, ", with the buffer size of ", Bufferchoice," m,"," and colours ", Rankchoice,
+              "</br></br><b>",
+              "Outlet Density </b></br>",
+              "<ul><li>Density around the population centre is ", round(Datazone@data[,18], 1)," per km<sup>2</sup>, which is ", round((Datazone@data[,18]/Datazone@data$SIMDmean*100),0), ifelse(round(Datazone@data[,18], 2)>round(Datazone@data$SIMDmean, 2) ,"% of", "% of")," the SIMD income group ", Datazone@data$SIMDrank5, " average.</li>",
+              "<li>",
+              ifelse(Datazone@data[,18]>Datazone$SIMD90, paste0("This datazone is in the <font color='#EE2C2C'>top 10%</font> of neighbourhoods in SIMD income group ", Datazone@data$SIMDrank5,".</li></ul>"), paste0("This datazone is not in the top 10% of neighbourhoods in SIMD income group ", Datazone@data$SIMDrank5,".</li></ul>")),
+              "<b> Health </b>",
+              "<ul><li>This standardised mortality ratio for tobacco related deaths is ", round(Datazone@data$Tobrelated_smr,0),ifelse(Datazone@data$Tobrelated_smr>Datazone@data$TobMort90SIMD, paste0(", which is in the <font color='#EE2C2C'>top 10%</font> of neighbourhoods in SIMD income group ", Datazone@data$SIMDrank5, ".</li></ul>"), paste0(", which is not in the top 10% of neighbourhoods in SIMD income group ", Datazone@data$SIMDrank5,".</li></ul>")),
+              "<b> Crime </b></br>",
+              "<ul><li> The number of recorded crimes of violence, sexual offences, domestic housebreaking, vandalism, drugs offences, and common assault is ", Datazone@data$crime_rate, " per 10,000 people, which is ",round((Datazone@data$crime_rate/Datazone@data$CrimemeanSIMD*100),0), ifelse(round(Datazone@data$crime_rate, 2)>round(Datazone@data$CrimemeanSIMD, 2) , paste0("% of the SIMD income group ", Datazone@data$SIMDrank5," average.</li>"), paste0("% of the SIMD income group ", Datazone@data$SIMDrank5," average.</li>")),
+              "<li>This datazone is ", ifelse(Datazone@data$crime_rate>Datazone@data$Crime90SIMD, paste0("in the <font color='#EE2C2C'>top 10%</font> of neighbourhoods in SIMD income group ", Datazone@data$SIMDrank5,".</li></ul>"), paste0(" is not in the top 10% of neighbourhoods in SIMD income group ", Datazone@data$SIMDrank5,".</li></ul>")),
+              "<br/>",                  
+              "<b><a target='_blank' href='http://statistics.gov.scot/doc/statistical-geography/", Datazone$code,"'> Click here for more information available on this datazone</a></b>")
+          }
           #####################
           mapit  %>%
             addPolygons(data=Datazone,
@@ -475,15 +635,15 @@ shinyServer(function(input, output) {
     }
   })
   
-# Zoom in on user location if given
-
+  # Zoom in on user location if given
+  
   ## need to clear it with a button!
   location2<-NA
   observe({
     if(!is.null(input$lat)){
       lat <- input$lat
       long <- input$long
-
+      
       if (!is.na(lat)){
         mapit <- leafletProxy("map")
         mapit %>% 
@@ -492,7 +652,7 @@ shinyServer(function(input, output) {
       } else {
         mapit  %>% setView(lng =-4.2026, lat = 56.4907, zoom = 7) 
       }
-    
+      
       map<-SpatialPoints(cbind(as.numeric(long),as.numeric(lat)))
       map2<-as.data.frame(cbind(long=as.numeric(long), lat=as.numeric(lat)))
       proj4string(map) <- CRS("+proj=longlat +datum=WGS84")
@@ -513,13 +673,13 @@ shinyServer(function(input, output) {
           #Datazone3<- as.data.frame(t(Datazone3))
           #Datazone@data <-cbind(Datazone@data, Datazone3)
           #Datazone<-Datazone[Datazone@data$buffer==T, ]
-       
+          
           ### get the data in
           data <- as.character(paste0(input$buffer, input$datatype, input$year, ".csv"))
           add<-read.csv(paste0("data/output/",data))
           Scotlandmean<-mean(add[,3])
           Datazone$Scottishaverage<-Scotlandmean
-          Scottish90th<-quantile(add[,3], c(.90)) 
+          Scottish90th<-quantile(add[,3], c(.90), na.rm=T) 
           add$CODE<-trimws(add$CODE)
           Datazone<-merge(Datazone, add, by.x="datazone", by.y="CODE")
           Datazone$stdareaha<-NULL
@@ -621,8 +781,8 @@ shinyServer(function(input, output) {
           
           
           ############################# have to make the categories for LA AVERAGE #############################
-          LAmean<-mean(Datazone@data[,16])
-          LA90th<-quantile(Datazone@data[,16], c(.90)) 
+          LAmean<-mean(Datazone@data[,16], na.rm=T)
+          LA90th<-quantile(Datazone@data[,16], c(.90), na.rm=T) 
           # have to make the categories
           Datazone@data$LAcat[Datazone@data[,16]>=(LAmean-0.2*LAmean) & Datazone@data[,16]<=LAmean+(0.15*LAmean)]<-4
           Datazone2<-subset(Datazone, Datazone@data[,16]<(LAmean-0.2*LAmean))
@@ -693,7 +853,7 @@ shinyServer(function(input, output) {
             popup <- paste0("<h3>", Datazone$name, "</h3><br>",
                             "Density around the population centre is ", "<strong>", round(Datazone@data[,16], 2)," per km2","</strong>",
                             "<br/>",
-                            "This is <strong>", round((Datazone@data[,16]/LAmean*100),0), ifelse(round(Datazone@data[,16], 2)>round(LAmean, 2) ,"% higher than</strong>", "%</strong> of")," the ", input$LAinput, " average",
+                            "This is <strong>", round((Datazone@data[,16]/LAmean*100),0), ifelse(round(Datazone@data[,16], 2)>round(LAmean, 2) ,"% of</strong>", "%</strong> of")," the ", input$LAinput, " average",
                             "<br/>",
                             ifelse(Datazone@data[,16]>LA90th, paste0("<strong><font color='#EE2C2C'>This datazone is in the top 10% of neighbourhoods in ", input$LAinput, "</font></strong>"), ""),
                             "<br/>",
@@ -718,7 +878,7 @@ shinyServer(function(input, output) {
             popup <- paste0("<h3>", Datazone$name, "</h3><br>",
                             "Density around the population centre is ", "<strong>", round(Datazone@data[,16], 2)," per km2","</strong>",
                             "<br/>",
-                            "This is <strong>", round((Datazone@data[,16]/Datazone$UR6_2013_2014mean*100),0), ifelse(round(Datazone@data[,16], 2)>round(Datazone$UR6_2013_2014mean, 2) ,"% higher than</strong>", "%</strong> of")," the Urban Rural Classification (6-Fold) Group ", Datazone$UR6_2013_2014, " average",
+                            "This is <strong>", round((Datazone@data[,16]/Datazone$UR6_2013_2014mean*100),0), ifelse(round(Datazone@data[,16], 2)>round(Datazone$UR6_2013_2014mean, 2) ,"% of</strong>", "%</strong> of")," the Urban Rural Classification (6-Fold) Group ", Datazone$UR6_2013_2014, " average",
                             "<br/>",
                             ifelse(Datazone@data[,16]>Datazone$UR6_2013_201490, paste0("<strong><font color='#EE2C2C'>This datazone is in the top 10% of neighbourhoods in the Urban Rural Classification (6-Fold) Group ", Datazone$UR6_2013_2014, "</font></strong>"), ""),
                             "<br/>",
@@ -751,7 +911,7 @@ shinyServer(function(input, output) {
             popup <- paste0("<h3>", Datazone$name, "</h3><br>",
                             "Density around the population centre is ", "<strong>", round(Datazone@data[,16], 2)," per km2","</strong>",
                             "<br/>",
-                            "This is <strong>", round((Datazone@data[,16]/Datazone$SIMDmean*100),0), ifelse(round(Datazone@data[,16], 2)>round(Datazone$SIMDmean, 2) ,"% higher than</strong>", "% of</strong>")," the Scottish Index of Multiple Deprivation Quintile Group ", Datazone$SIMDrank5, " average",
+                            "This is <strong>", round((Datazone@data[,16]/Datazone$SIMDmean*100),0), ifelse(round(Datazone@data[,16], 2)>round(Datazone$SIMDmean, 2) ,"% of</strong>", "% of</strong>")," the Scottish Index of Multiple Deprivation Quintile Group ", Datazone$SIMDrank5, " average",
                             "<br/>",
                             ifelse(Datazone@data[,16]>Datazone$SIMD90, paste0("<strong><font color='#EE2C2C'>This datazone is in the top 10% of neighbourhoods in the Scottish Index of Multiple Deprivation Quintile Group ", Datazone$SIMDrank5, "</font></strong>"), ""),
                             "<br/>",
@@ -834,7 +994,7 @@ shinyServer(function(input, output) {
             add<-read.csv(paste0("data/output/",data))
             Scotlandmean<-mean(add[,3])
             Datazone$Scottishaverage<-Scotlandmean
-            Scottish90th<-quantile(add[,3], c(.90)) 
+            Scottish90th<-quantile(add[,3], c(.90),na.rm=T) 
             add$CODE<-trimws(add$CODE)
             Datazone<-merge(Datazone, add, by.x="datazone", by.y="CODE")
             Datazone$stdareaha<-NULL
@@ -938,8 +1098,8 @@ shinyServer(function(input, output) {
             
             
             ############################# have to make the categories for LA AVERAGE #############################
-            LAmean<-mean(Datazone@data[,16])
-            LA90th<-quantile(Datazone@data[,16], c(.90)) 
+            LAmean<-mean(Datazone@data[,16], na.rm=T)
+            LA90th<-quantile(Datazone@data[,16], c(.90), na.rm = T) 
             # have to make the categories
             Datazone@data$LAcat[Datazone@data[,16]>=(LAmean-0.2*LAmean) & Datazone@data[,16]<=LAmean+(0.15*LAmean)]<-4
             Datazone2<-subset(Datazone, Datazone@data[,16]<(LAmean-0.2*LAmean))
@@ -1010,7 +1170,7 @@ shinyServer(function(input, output) {
               popup <- paste0("<h3>", Datazone$name, "</h3><br>",
                               "Density around the population centre is ", "<strong>", round(Datazone@data[,16], 2)," per km2","</strong>",
                               "<br/>",
-                              "This is <strong>", round((Datazone@data[,16]/LAmean*100),0), ifelse(round(Datazone@data[,16], 2)>round(LAmean, 2) ,"% higher than</strong>", "%</strong> of")," the ", input$LAinput, " average",
+                              "This is <strong>", round((Datazone@data[,16]/LAmean*100),0), ifelse(round(Datazone@data[,16], 2)>round(LAmean, 2) ,"% of</strong>", "%</strong> of")," the ", input$LAinput, " average",
                               "<br/>",
                               ifelse(Datazone@data[,16]>LA90th, paste0("<strong><font color='#EE2C2C'>This datazone is in the top 10% of neighbourhoods in ", input$LAinput, "</font></strong>"), ""),
                               "<br/>",
@@ -1035,7 +1195,7 @@ shinyServer(function(input, output) {
               popup <- paste0("<h3>", Datazone$name, "</h3><br>",
                               "Density around the population centre is ", "<strong>", round(Datazone@data[,16], 2)," per km2","</strong>",
                               "<br/>",
-                              "This is <strong>", round((Datazone@data[,16]/Datazone$UR6_2013_2014mean*100),0), ifelse(round(Datazone@data[,16], 2)>round(Datazone$UR6_2013_2014mean, 2) ,"% higher than</strong>", "%</strong> of")," the Urban Rural Classification (6-Fold) Group ", Datazone$UR6_2013_2014, " average",
+                              "This is <strong>", round((Datazone@data[,16]/Datazone$UR6_2013_2014mean*100),0), ifelse(round(Datazone@data[,16], 2)>round(Datazone$UR6_2013_2014mean, 2) ,"% of</strong>", "%</strong> of")," the Urban Rural Classification (6-Fold) Group ", Datazone$UR6_2013_2014, " average",
                               "<br/>",
                               ifelse(Datazone@data[,16]>Datazone$UR6_2013_201490, paste0("<strong><font color='#EE2C2C'>This datazone is in the top 10% of neighbourhoods in the Urban Rural Classification (6-Fold) Group ", Datazone$UR6_2013_2014, "</font></strong>"), ""),
                               "<br/>",
@@ -1068,7 +1228,7 @@ shinyServer(function(input, output) {
               popup <- paste0("<h3>", Datazone$name, "</h3><br>",
                               "Density around the population centre is ", "<strong>", round(Datazone@data[,16], 2)," per km2","</strong>",
                               "<br/>",
-                              "This is <strong>", round((Datazone@data[,16]/Datazone$SIMDmean*100),0), ifelse(round(Datazone@data[,16], 2)>round(Datazone$SIMDmean, 2) ,"% higher than</strong>", "% of</strong>")," the Scottish Index of Multiple Deprivation Quintile Group ", Datazone$SIMDrank5, " average",
+                              "This is <strong>", round((Datazone@data[,16]/Datazone$SIMDmean*100),0), ifelse(round(Datazone@data[,16], 2)>round(Datazone$SIMDmean, 2) ,"% of</strong>", "% of</strong>")," the Scottish Index of Multiple Deprivation Quintile Group ", Datazone$SIMDrank5, " average",
                               "<br/>",
                               ifelse(Datazone@data[,16]>Datazone$SIMD90, paste0("<strong><font color='#EE2C2C'>This datazone is in the top 10% of neighbourhoods in the Scottish Index of Multiple Deprivation Quintile Group ", Datazone$SIMDrank5, "</font></strong>"), ""),
                               "<br/>",
@@ -1125,7 +1285,7 @@ shinyServer(function(input, output) {
       add<-read.csv(paste0("data/output/",data))
       Scotlandmean<-mean(add[,3])
       Datazone$Scottishaverage<-Scotlandmean
-      Scottish90th<-quantile(add[,3], c(.90)) 
+      Scottish90th<-quantile(add[,3], c(.90), na.rm=T) 
       add$CODE<-trimws(add$CODE)
       Datazone<-merge(Datazone, add, by.x="datazone", by.y="CODE")
       Datazone$stdareaha<-NULL
@@ -1229,8 +1389,8 @@ shinyServer(function(input, output) {
       
       
       ############################# have to make the categories for LA AVERAGE #############################
-      LAmean<-mean(Datazone@data[,16])
-      LA90th<-quantile(Datazone@data[,16], c(.90)) 
+      LAmean<-mean(Datazone@data[,16], na.rm=T)
+      LA90th<-quantile(Datazone@data[,16], c(.90), na.rm=T) 
       # have to make the categories
       Datazone@data$LAcat[Datazone@data[,16]>=(LAmean-0.2*LAmean) & Datazone@data[,16]<=LAmean+(0.15*LAmean)]<-4
       Datazone2<-subset(Datazone, Datazone@data[,16]<(LAmean-0.2*LAmean))
@@ -1301,7 +1461,7 @@ shinyServer(function(input, output) {
         popup <- paste0("<h3>", Datazone$name, "</h3><br>",
                         "Density around the population centre is ", "<strong>", round(Datazone@data[,16], 2)," per km2","</strong>",
                         "<br/>",
-                        "This is <strong>", round((Datazone@data[,16]/LAmean*100),0), ifelse(round(Datazone@data[,16], 2)>round(LAmean, 2) ,"% higher than</strong>", "%</strong> of")," the ", input$LAinput, " average",
+                        "This is <strong>", round((Datazone@data[,16]/LAmean*100),0), ifelse(round(Datazone@data[,16], 2)>round(LAmean, 2) ,"% of</strong>", "%</strong> of")," the ", input$LAinput, " average",
                         "<br/>",
                         ifelse(Datazone@data[,16]>LA90th, paste0("<strong><font color='#EE2C2C'>This datazone is in the top 10% of neighbourhoods in ", input$LAinput, "</font></strong>"), ""),
                         "<br/>",
@@ -1326,7 +1486,7 @@ shinyServer(function(input, output) {
         popup <- paste0("<h3>", Datazone$name, "</h3><br>",
                         "Density around the population centre is ", "<strong>", round(Datazone@data[,16], 2)," per km2","</strong>",
                         "<br/>",
-                        "This is <strong>", round((Datazone@data[,16]/Datazone$UR6_2013_2014mean*100),0), ifelse(round(Datazone@data[,16], 2)>round(Datazone$UR6_2013_2014mean, 2) ,"% higher than</strong>", "%</strong> of")," the Urban Rural Classification (6-Fold) Group ", Datazone$UR6_2013_2014, " average",
+                        "This is <strong>", round((Datazone@data[,16]/Datazone$UR6_2013_2014mean*100),0), ifelse(round(Datazone@data[,16], 2)>round(Datazone$UR6_2013_2014mean, 2) ,"% of</strong>", "%</strong> of")," the Urban Rural Classification (6-Fold) Group ", Datazone$UR6_2013_2014, " average",
                         "<br/>",
                         ifelse(Datazone@data[,16]>Datazone$UR6_2013_201490, paste0("<strong><font color='#EE2C2C'>This datazone is in the top 10% of neighbourhoods in the Urban Rural Classification (6-Fold) Group ", Datazone$UR6_2013_2014, "</font></strong>"), ""),
                         "<br/>",
@@ -1359,7 +1519,7 @@ shinyServer(function(input, output) {
         popup <- paste0("<h3>", Datazone$name, "</h3><br>",
                         "Density around the population centre is ", "<strong>", round(Datazone@data[,16], 2)," per km2","</strong>",
                         "<br/>",
-                        "This is <strong>", round((Datazone@data[,16]/Datazone$SIMDmean*100),0), ifelse(round(Datazone@data[,16], 2)>round(Datazone$SIMDmean, 2) ,"% higher than</strong>", "% of</strong>")," the Scottish Index of Multiple Deprivation Quintile Group ", Datazone$SIMDrank5, " average",
+                        "This is <strong>", round((Datazone@data[,16]/Datazone$SIMDmean*100),0), ifelse(round(Datazone@data[,16], 2)>round(Datazone$SIMDmean, 2) ,"% of</strong>", "% of</strong>")," the Scottish Index of Multiple Deprivation Quintile Group ", Datazone$SIMDrank5, " average",
                         "<br/>",
                         ifelse(Datazone@data[,16]>Datazone$SIMD90, paste0("<strong><font color='#EE2C2C'>This datazone is in the top 10% of neighbourhoods in the Scottish Index of Multiple Deprivation Quintile Group ", Datazone$SIMDrank5, "</font></strong>"), ""),
                         "<br/>",
@@ -1434,10 +1594,10 @@ shinyServer(function(input, output) {
     count<-names(v[17])
     density<-names(v[18])
     v<-subset(v, select=c("code", "name", "InterZone", "Intermediate_Zone.y", "Council", "Councilname",count, density, "Tobrelated_smr", "Alcrelated_smr"
-                       , "UR6_2013_2014","ALCOHOL", "SIMDrank5", "crime_rate"))
+                          , "UR6_2013_2014","ALCOHOL", "SIMDrank5", "crime_rate"))
     colnames(v)<-c("DZ_2011_code", "DZ_2011_name", "IZ_2011_code", "IZ_2011_name", "LA_code", "LA_name",count, density, "TobMortSMR_2011_2015", "AlcMortSMR_2011_2015",
-                  "UR6_2013_2014","SIMD_2016_AlcHosp", "SIMD_2016_income5", "SIMD_2016_crime"
-                   )
+                   "UR6_2013_2014","SIMD_2016_AlcHosp", "SIMD_2016_income5", "SIMD_2016_crime"
+    )
     return(v)
   })
   

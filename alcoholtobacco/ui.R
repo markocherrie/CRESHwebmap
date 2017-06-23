@@ -12,7 +12,7 @@ library(ggplot2)
 #list<-readRDS("data/list.rds")
 #list<-unique(list[,1])
 list<-read.csv("data/list.csv", header=F)
-list<-list[2:nrow(list),]
+list<-list[1:nrow(list),]
 
 ## Somehow take out V1 in the selection box!!!
 
