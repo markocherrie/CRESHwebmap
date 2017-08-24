@@ -3,7 +3,11 @@ Precursor- you have set PuTTY to login to remote computer
 
 On your computer
 
-## Make changes the files ( I like brackets)
+## Make changes to the web pages (I like brackets)
+## Make changes to the images (I like GIMP)
+
+
+
 
 go to directory with files
 git status
@@ -20,9 +24,18 @@ git status
 git pull origin master
 markocherrie, **input normal pass but slightly diff ;) **
 
-now you want to copy the files to the nginx server
+now you want to copy the files to the nginx server (/usr/share/nginx/html)
 
-/usr/share/nginx
+so you copy images by running:
+cp -R images /usr/share/nginx/html
 
+and the html by running:
+cd alcoholtobacco
+cp index.html /usr/share/nginx/html 
+
+Now restart the nginx server for the changes to take effect:
+sudo service nginx stop
+sudo service nginx start
+sudo service nginx restart
 
 
