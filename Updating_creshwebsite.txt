@@ -3,11 +3,9 @@ Precursor- you have set PuTTY to login to remote computer
 
 On your computer
 
-## Make changes to the web pages (I like brackets)
-## Make changes to the images (I like GIMP)
-
-
-
+## Make changes to app (Rstudio)
+## Make changes to the web pages (Brackets)
+## Make changes to the images (GIMP)
 
 go to directory with files
 git status
