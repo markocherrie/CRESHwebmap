@@ -1,0 +1,28 @@
+Precursor- you have set up both computers to talk to github repository
+Precursor- you have set PuTTY to login to remote computer
+
+On your computer
+
+## Make changes the files ( I like brackets)
+
+go to directory with files
+git status
+git add .
+git commit -m "Create a useful message"
+git push origin master
+
+now got to the remote computer terminal through putty
+
+go to the same directory of files, should be in:
+/srv/shiny-server
+
+git status
+git pull origin master
+markocherrie, **input normal pass but slightly diff ;) **
+
+now you want to copy the files to the nginx server
+
+/usr/share/nginx
+
+
+
