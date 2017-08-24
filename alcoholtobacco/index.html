@@ -12,93 +12,28 @@ body,h1,h2,h3,h4,h5,h6 {font-family: "Karma", sans-serif}
 .w3-bar-block .w3-bar-item {padding:20px}
 </style>
 <body>
-
-<!-- header image -->
-<div id="banner">
-    <div id="banner"><img src="/images/cresh_header_2015_7.png">
-    </div>
-</div>
 <style>
-#banner{
-    margin:auto;
-    z-index:2;width:40%;min-width:300px
+body, html {
+    height: 100%;
+    margin: 0;
 }
-    </style>
-<!-- Sidebar (hidden by default) -->
-<nav class="w3-sidebar w3-bar-block w3-card-2 w3-top w3-xlarge w3-animate-left" style="display:none;z-index:2;width:40%;min-width:300px" id="mySidebar">
-  <a href="javascript:void(0)" onclick="w3_close()"
-  class="w3-bar-item w3-button">Close Menu</a>
-  <a href="#Most Recent Map" onclick="w3_close()" class="w3-bar-item w3-button">Most recent Map</a>
-  <a href="#Older Maps" onclick="w3_close()" class="w3-bar-item w3-button">Older Maps</a>
-</nav>
 
-<!-- Top menu -->
-<div class="w3-top">
-  <div class="w3-white w3-xlarge" style="max-width:1200px;margin:auto">
-    <div class="w3-button w3-padding-16 w3-left" onclick="w3_open()">☰</div>
-  </div>
-</div>
-  
-<!-- !PAGE CONTENT! -->
-<div class="w3-main w3-content" >
+.bg {
+    /* The image used */
+    background-image: url("images/centralbelt_density.png");
 
-  <!-- About Section -->
-  <div class="w3-container w3-center" id="Most Recent Map">
-    <a href="http://creshmap.com/shiny/alcoholtobacco/">
-    <img src="images/webmaplocator2.png" alt="webmap" class="w3-image" style="display:block;margin:auto" width="1395" height="938">
-    </a>
-      <h4><b>Alcohol and Tobacco Environments in Scotland, May 2017</b></h4>
-      <h6><i>Created in collaboration with ...</i></h6>
-      <p>On this page you can map and download data on alcohol and tobacco outlet density and related harm for small neighbourhoods across Scotland.</p>
-  </div>
-  <hr>
-  
-  
+    /* Full height */
+    height: 100%; 
 
-  <!-- First Photo Grid-->
-  <div class="w3-row-padding w3-padding-16 w3-center" id="Older Maps">
-
-<div class="w3-quarter">
-<a href="https://markcherrie.shinyapps.io/MMPgeodata/">
-      <img src="images/MMP.png" alt="MMP" style="width:80%">
-      </a>
-      <h3>Mood Mobility and Place Geodataportal, Feb 2017</h3>
-      <p>Use the dropdown menus to export historical socio-economic and environmental data for Edinburgh, Scotland.</p>
-    </div>
-    
- <div class="w3-quarter">
-<a href="http://www.kecoviewer.com/">
-      <img src="images/webmaplocatorOLD.png" alt="more" style="width:100%">
-      </a>
-	<h3>Legacy Webmap-Alcohol and Tobacco Environments in Scotland, June 2015</h3>
-	<p>If you are interested in the information on alcohol and tobacco outlets at 2001 data zone boundaries then consult our previous webmap here.</p>
-      <p></p>
-      </div>
-</div>
-  
-  <hr id="about">
-
-  <!-- Footer -->
-  <footer class="w3-row-padding w3-padding-32">
-    <div class="w3-third">
-      <p>Powered by <a href="https://www.w3schools.com/w3css/default.asp" target="_blank">w3.css</a></p>
-    </div>
-  
-  
-  </footer>
-<!-- End page content -->
-</div>
-
-<script>
-// Script to open and close sidebar
-function w3_open() {
-    document.getElementById("mySidebar").style.display = "block";
+    /* Center and scale the image nicely */
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: cover;
 }
- 
-function w3_close() {
-    document.getElementById("mySidebar").style.display = "none";
-}
-</script>
+</style>
+</head>
+<body>
 
+<div class="bg"></div>
 </body>
 </html>
