@@ -47,16 +47,7 @@ shinyUI(fluidPage(
   
   tags$style(type = "text/css", "#map {height: calc(100vh - 110px) !important;}"),
 
-  headerPanel(fluidRow(
-    column(9, "Alcohol and Tobacco Environments in Scotland"), 
-    column(3, tags$a(href="https://cresh.org.uk/",img(height = 63, width = 115, src = "Cresh_green_small2.png"))),
-    column(3, tags$a(href="http://www.esrc.ac.uk/",img(height = 129, width = 159, src = "ESRC.png"))),
-    column(3, tags$a(href="http://www.ed.ac.uk/home",img(height = 73.5, width = 73.5, src = "Edin.png"))),
-    column(3, tags$a(href="http://www.gla.ac.uk/",img(height = 114.5, width = 267, src = "UoG.jpg"))),
-    column(3, tags$a(href="http://www.alcohol-focus-scotland.org.uk/",img(height = 64, width = 136, src = "AFS.jpg"))),
-    column(3, tags$a(href="http://www.ashscotland.org.uk/",img(height = 90, width = 154, src = "ash-logo.png"))),
-    column(3, tags$a(href="http://www.scphrp.ac.uk/",img(height = 61.666, width = 212, src = "SCPHRP.jpg")))
-    )
+  headerPanel("Alcohol and Tobacco Environments in Scotland"
   , windowTitle = "Alcohol and Tobacco Environments in Scotland"),
 
 
