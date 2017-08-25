@@ -45,7 +45,7 @@ shinyUI(fluidPage(
               });
               '),
   
-  tags$style(type = "text/css", "#map {height: calc(100vh - 150px) !important;}"),
+  tags$style(type = "text/css", "#map {height: calc(100vh - 160px) !important;}"),
 
 tags$head(
   tags$style(HTML("
@@ -55,10 +55,10 @@ tags$head(
 
 headerPanel(
   fluidRow(
-  column(9, h1("Alcohol and Tobacco Environments in Scotland", 
+  column(11, h1("Alcohol and Tobacco Environments in Scotland", 
      style = "font-family: 'Roboto Slab', cursive;
      font-weight: bold; font-size: 39px")),
-  column(2, offset=-1, tags$a(href="https://cresh.org.uk/",img(height = 68.16, width = 68.16, src = "cresh_twitter_md.png")))
+  column(1, offset=-1, tags$a(href="https://cresh.org.uk/",img(height = 79.5225, width = 78.384, src = "cresh_twitter_md.png")))
 )
 , windowTitle = "Alcohol and Tobacco Environments in Scotland"),
 
