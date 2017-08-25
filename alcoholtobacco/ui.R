@@ -47,11 +47,21 @@ shinyUI(fluidPage(
   
   tags$style(type = "text/css", "#map {height: calc(100vh - 110px) !important;}"),
 
-  headerPanel(
-fluidRow(
-  column(9, "Alcohol and Tobacco Environments in Scotland"), 
-  column(3, img(height = 45, width = 100, src = "cresh_twitter_lg.png"))
-) , windowTitle = "Alcohol and Tobacco Environments in Scotland"),
+tags$head(
+  tags$style(HTML("
+                  @import url('//fonts.googleapis.com/css?family=Roboto+Slab');
+                  "))
+  ),
+
+headerPanel(
+  fluidRow(
+  column(9, h1("Alcohol and Tobacco Environments in Scotland", 
+     style = "font-family: 'Roboto Slab', cursive;
+     font-weight: bold; font-size: 39px")),
+  column(2, offset=-1, tags$a(href="https://cresh.org.uk/",img(height = 85.2, width = 85.2, src = "cresh_twitter_md.png")))
+)
+, windowTitle = "Alcohol and Tobacco Environments in Scotland"),
+
 
   ### CRESH favicon
   tags$head(tags$link(rel = "shortcut icon", href="http://www.iconj.com/ico/g/g/ggtzbwew2b.ico", type="image/x-icon")),
