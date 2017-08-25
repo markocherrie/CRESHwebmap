@@ -47,9 +47,11 @@ shinyUI(fluidPage(
   
   tags$style(type = "text/css", "#map {height: calc(100vh - 110px) !important;}"),
 
-  headerPanel("Alcohol and Tobacco Environments in Scotland"
-  , windowTitle = "Alcohol and Tobacco Environments in Scotland"),
-
+  headerPanel(
+fluidRow(
+  column(9, "Alcohol and Tobacco Environments in Scotland"), 
+  column(3, img(height = 45, width = 100, src = "cresh_twitter_lg.png"))
+) , windowTitle = "Alcohol and Tobacco Environments in Scotland"),
 
   ### CRESH favicon
   tags$head(tags$link(rel = "shortcut icon", href="http://www.iconj.com/ico/g/g/ggtzbwew2b.ico", type="image/x-icon")),
