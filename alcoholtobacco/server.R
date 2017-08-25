@@ -77,7 +77,7 @@ shinyServer(function(input, output) {
   output$map <- renderLeaflet({
     leaflet() %>%
       addProviderTiles("CartoDB.Positron", group = "CartoDB Positron") %>%
-      addProviderTiles("Stamen.Toner", group = "Toner") %>%
+      addProviderTiles("Stamen.Toner", group = "Stamen Toner") %>%
       addProviderTiles("OpenStreetMap.BlackAndWhite", group = "OSM") %>%
       setView(lng =-4.2026, lat = 56.4907, zoom = 7) %>%
       addLayersControl(

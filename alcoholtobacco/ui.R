@@ -45,7 +45,7 @@ shinyUI(fluidPage(
               });
               '),
   
-  tags$style(type = "text/css", "#map {height: calc(100vh - 110px) !important;}"),
+  tags$style(type = "text/css", "#map {height: calc(100vh - 150px) !important;}"),
 
 tags$head(
   tags$style(HTML("
@@ -58,7 +58,7 @@ headerPanel(
   column(9, h1("Alcohol and Tobacco Environments in Scotland", 
      style = "font-family: 'Roboto Slab', cursive;
      font-weight: bold; font-size: 39px")),
-  column(2, offset=-1, tags$a(href="https://cresh.org.uk/",img(height = 85.2, width = 85.2, src = "cresh_twitter_md.png")))
+  column(2, offset=-1, tags$a(href="https://cresh.org.uk/",img(height = 68.16, width = 68.16, src = "cresh_twitter_md.png")))
 )
 , windowTitle = "Alcohol and Tobacco Environments in Scotland"),
 
@@ -116,7 +116,7 @@ headerPanel(
                 selected="2016"),
     bsTooltip("buffer", "In the density calculation this is also known as the buffer size, that is, the distance you would expect people to travel to visit these outlets. Larger buffer sizes may be more appropriate for rural areas and smaller ones for urban areas.", "top"
     ),
-    selectInput("buffer", "Typical Distance to Outlet (m)",
+    selectInput("buffer", "Typical Distance to Outlet (metres)",
                 list("400" = "400",
                      "800" = "800",
                      "1,000"  = "1000",
@@ -133,9 +133,7 @@ headerPanel(
                      "Compared to Scottish Average" = "SCO",
                      "Compared to Urban/Rural Average"  = "URBRUR",
                      "Compared to Deprivation Average"  = "SIMD"
-                ), selected="SCO"),
-  tags$br(),
-    helpText("Application built in Rstudio (0.98.507)")),
+                ), selected="SCO")),
   tags$br(),
   mainPanel(
     tabsetPanel(type = "tabs",
