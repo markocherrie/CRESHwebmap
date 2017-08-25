@@ -96,7 +96,7 @@ headerPanel(
     ),
     
     selectizeInput('LAinput', 'Local Authorities', choices = list, multiple = TRUE, options = list(maxItems = 5)),
-    div(style="display:inline-block", textInput("str", label =("Enter an Area of interest"), value = "")),
+    div(style="display:inline-block", textInput("str", label =("Enter an Area of Interest"), value = "")),
     bsTooltip("str", "If you would prefer to view a specific area, please type in an address, postcode or point of interest and click Enter. The location will be shown as a blue marker with data for the surrounding area local area presented on the map.", "top"
     ),
     div(style="display:inline-block",actionButton("goButton", "Enter")),

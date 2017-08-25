@@ -303,6 +303,17 @@ shinyServer(function(input, output) {
         MortAdd<-read.csv("data/Mort.csv")
         MortAdd$Tobrelated_smr<-as.numeric(MortAdd$Tobrelated_smr)
         MortAdd$Alcrelated_smr<-as.numeric(MortAdd$Alcrelated_smr)
+        
+        MortAdd$Alcrelated_smr2<-quantcut(MortAdd$Alcrelated_smr, 5)
+        levels(MortAdd$Alcrelated_smr2)<-sub("\\(|\\[|\\]", "", levels(MortAdd$Alcrelated_smr2))
+        levels(MortAdd$Alcrelated_smr2)<-sub("\\]", "", levels(MortAdd$Alcrelated_smr2))
+        levels(MortAdd$Alcrelated_smr2)<-sub(",", " and ", levels(MortAdd$Alcrelated_smr2))
+        
+        MortAdd$Tobrelated_smr2<-quantcut(MortAdd$Tobrelated_smr, 5)
+        levels(MortAdd$Tobrelated_smr2)<-sub("\\(|\\[|\\]", "", levels(MortAdd$Tobrelated_smr2))
+        levels(MortAdd$Tobrelated_smr2)<-sub("\\]", "", levels(MortAdd$Tobrelated_smr2))
+        levels(MortAdd$Tobrelated_smr2)<-sub(",", " and ", levels(MortAdd$Tobrelated_smr2))
+        
         Datazone<-merge(Datazone, MortAdd,by="code")
         ScottishMortAlc90<-quantile(MortAdd$Alcrelated_smr, c(.90), na.rm=T)
         ScottishMortTob90<-quantile(MortAdd$Tobrelated_smr, c(.90), na.rm=T)
@@ -408,7 +419,7 @@ shinyServer(function(input, output) {
               ifelse(Datazone@data[,18]>Scottish90th, "This datazone is in the <font color='#EE2C2C'>top 10%</font> of neighbourhoods in Scotland.</li></ul>", "This datazone is not in the top 10% of neighbourhoods in Scotland.</li></ul>"),
               "<b> Health </b>",
               "<ul><li>The standardised ratio of hospital stays related to alcohol misuse is ", Datazone@data$ALCOHOL,ifelse(Datazone@data$ALCOHOL>ScottishHosp90, ", which is in the <font color='#EE2C2C'>top 10%</font> of neighbourhoods in Scotland.</li>", ", which is not in the top 10% of neighbourhoods in Scotland.</li>"),
-              "<li>This standardised mortality ratio for alcohol related deaths is ", round(Datazone@data$Alcrelated_smr,0),ifelse(Datazone@data$ALCOHOL>ScottishMortAlc90, ", which is in the <font color='#EE2C2C'>top 10%</font> of neighbourhoods in Scotland.</li></ul>", ", which is not in the top 10% of neighbourhoods in Scotland.</li></ul>"),
+              "<li>The standardised mortality ratio for alcohol related deaths is between ", Datazone@data$Alcrelated_smr2,ifelse(Datazone@data$ALCOHOL>ScottishMortAlc90, ", which is in the <font color='#EE2C2C'>top 10%</font> of neighbourhoods in Scotland.</li></ul>", ", which is not in the top 10% of neighbourhoods in Scotland.</li></ul>"),
               "<b> Crime </b></br>",
               "<ul><li> The number of recorded crimes of violence, sexual offences, domestic housebreaking, vandalism, drugs offences, and common assault is ", Datazone@data$crime_rate, " per 10,000 people, which is ",round((Datazone@data$crime_rate/ScottishCrimeratemean*100),0), ifelse(round(Datazone@data$crime_rate, 2)>round(ScottishCrimeratemean, 2) ,"% of", "% of")," the Scottish average.</li>", 
               "<li>This datazone is ", ifelse(Datazone@data$crime_rate>ScottishCrimerate90, "in the <font color='#EE2C2C'>top 10%</font> of neighbourhoods in Scotland.</li></ul>", "is not in the top 10% of neighbourhoods in Scotland.</li></ul>"),
@@ -426,7 +437,7 @@ shinyServer(function(input, output) {
               "<li>",
               ifelse(Datazone@data[,18]>Scottish90th, "This datazone is in the <font color='#EE2C2C'>top 10%</font> of neighbourhoods in Scotland.</li></ul>", "This datazone is not in the top 10% of neighbourhoods in Scotland.</li></ul>"),
               "<b> Health </b>",
-              "<ul><li>The standardised mortality ratio for tobaccco related deaths is ", round(Datazone@data$Tobrelated_smr,0),ifelse(Datazone@data$ALCOHOL>ScottishMortTob90, ", which is in the <font color='#EE2C2C'>top 10%</font> of neighbourhoods in Scotland.</li></ul>", ", which is not in the top 10% of neighbourhoods in Scotland.</li></ul>"),
+              "<ul><li>The standardised mortality ratio for tobaccco related deaths is between ", Datazone@data$Tobrelated_smr2,ifelse(Datazone@data$ALCOHOL>ScottishMortTob90, ", which is in the <font color='#EE2C2C'>top 10%</font> of neighbourhoods in Scotland.</li></ul>", ", which is not in the top 10% of neighbourhoods in Scotland.</li></ul>"),
               "<b> Crime </b></br>",
               "<ul><li> The number of recorded crimes of violence, sexual offences, domestic housebreaking, vandalism, drugs offences, and common assault is ", Datazone@data$crime_rate, " per 10,000 people, which is ",round((Datazone@data$crime_rate/ScottishCrimeratemean*100),0), ifelse(round(Datazone@data$crime_rate, 2)>round(ScottishCrimeratemean, 2) ,"% of", "% of")," the Scottish average.</li>", 
               "<li>This datazone is ", ifelse(Datazone@data$crime_rate>ScottishCrimerate90, "in the <font color='#EE2C2C'>top 10%</font> of neighbourhoods in Scotland.</li></ul>", "is not in the top 10% of neighbourhoods in Scotland.</li></ul>"),
@@ -462,7 +473,7 @@ shinyServer(function(input, output) {
               ifelse(Datazone@data[,18]>LA90th, paste0("This datazone is in the <font color='#EE2C2C'>top 10%</font> of neighbourhoods in ", input$LAinput,".</li></ul>"), paste0("This datazone is not in the top 10% of neighbourhoods in ", input$LAinput,".</li></ul>")),
               "<b> Health </b>",
               "<ul><li>The standardised ratio of hospital stays related to alcohol misuse is ", Datazone@data$ALCOHOL,ifelse(Datazone@data$ALCOHOL>LAHospmean, paste0(", which is in the <font color='#EE2C2C'>top 10%</font> of neighbourhoods in ", input$LAinput,".</li>"), paste0(", which is not in the top 10% of neighbourhoods in ",input$LAinput,".</li>")),
-              "<li>This standardised mortality ratio for alcohol related deaths is ", round(Datazone@data$Alcrelated_smr,0),ifelse(Datazone@data$ALCOHOL>LAMortAlc90, paste0(", which is in the <font color='#EE2C2C'>top 10%</font> of neighbourhoods in ", input$LAinput,".</li></ul>"), paste0(", which is not in the top 10% of neighbourhoods in ", input$LAinput,".</li></ul>")),
+              "<li>The standardised mortality ratio for alcohol related deaths is between ", Datazone@data$Alcrelated_smr2,ifelse(Datazone@data$ALCOHOL>LAMortAlc90, paste0(", which is in the <font color='#EE2C2C'>top 10%</font> of neighbourhoods in ", input$LAinput,".</li></ul>"), paste0(", which is not in the top 10% of neighbourhoods in ", input$LAinput,".</li></ul>")),
               "<b> Crime </b></br>",
               "<ul><li> The number of recorded crimes of violence, sexual offences, domestic housebreaking, vandalism, drugs offences, and common assault is ", Datazone@data$crime_rate, " per 10,000 people, which is ",round((Datazone@data$crime_rate/LACrimemean*100),0), ifelse(round(Datazone@data$crime_rate, 2)>round(LACrimemean, 2) , paste0("% of the ", input$LAinput," average.</li>"), paste0("% of the ", input$LAinput," average.</li>")),
               "<li>This datazone is ", ifelse(Datazone@data$crime_rate>LACrime90, paste0("in the <font color='#EE2C2C'>top 10%</font> of neighbourhoods in ", input$LAinput,".</li></ul>"), paste0(" is not in the top 10% of neighbourhoods in ", input$LAinput,".</li></ul>")),
@@ -480,7 +491,7 @@ shinyServer(function(input, output) {
               "<li>",
               ifelse(Datazone@data[,18]>LA90th, "This datazone is in the <font color='#EE2C2C'>top 10%</font> of neighbourhoods in Scotland.</li></ul>", "This datazone is not in the top 10% of neighbourhoods in Scotland.</li></ul>"),
               "<b> Health </b>",
-              "<ul><li>This standardised mortality ratio for tobacco related deaths is ", round(Datazone@data$Tobrelated_smr,0),ifelse(Datazone@data$TOBACCO>LAMortTob90, paste0(", which is in the <font color='#EE2C2C'>top 10%</font> of neighbourhoods in", input$LAinput,".</li></ul>"), paste0(", which is not in the top 10% of neighbourhoods in ", input$LAinput,".</li></ul>")),
+              "<ul><li>The standardised mortality ratio for tobacco related deaths is between ", Datazone@data$Tobrelated_smr2,ifelse(Datazone@data$TOBACCO>LAMortTob90, paste0(", which is in the <font color='#EE2C2C'>top 10%</font> of neighbourhoods in", input$LAinput,".</li></ul>"), paste0(", which is not in the top 10% of neighbourhoods in ", input$LAinput,".</li></ul>")),
               "<b> Crime </b></br>",
               "<ul><li> The number of recorded crimes of violence, sexual offences, domestic housebreaking, vandalism, drugs offences, and common assault is ", Datazone@data$crime_rate, " per 10,000 people, which is ",round((Datazone@data$crime_rate/LACrimemean*100),0), ifelse(round(Datazone@data$crime_rate, 2)>round(LACrimemean, 2) , paste0("% of the ", input$LAinput," average.</li>"), paste0("% of the ", input$LAinput," average.</li>")),
               "<li>This datazone is ", ifelse(Datazone@data$crime_rate>LACrime90, paste0("in the <font color='#EE2C2C'>top 10%</font> of neighbourhoods in ", input$LAinput,".</li></ul>"), paste0(" is not in the top 10% of neighbourhoods in ", input$LAinput,".</li></ul>")),
@@ -514,7 +525,7 @@ shinyServer(function(input, output) {
               ifelse(Datazone@data[,18]>Datazone@data$UR6_2013_201490, paste0("This datazone is in the <font color='#EE2C2C'>top 10%</font> of neighbourhoods in Urban/rural group ", Datazone@data$UR6_2013_2014,".</li></ul>"), paste0("This datazone is not in the top 10% of neighbourhoods in Urban/Rural group ", Datazone@data$UR6_2013_2014,".</li></ul>")),
               "<b> Health </b>",
               "<ul><li>The standardised ratio of hospital stays related to alcohol misuse is ", Datazone@data$ALCOHOL,ifelse(Datazone@data$ALCOHOL>Datazone@data$Hosp90Urb, paste0(", which is in the <font color='#EE2C2C'>top 10%</font> of neighbourhoods in Urban/Rural group ", Datazone@data$UR6_2013_2014,".</li>"), paste0(", which is not in the top 10% of neighbourhoods in Urban/Rural group ",Datazone@data$UR6_2013_2014,".</li>")),
-              "<li>This standardised mortality ratio for alcohol related deaths is ", round(Datazone@data$Alcrelated_smr,0),ifelse(Datazone@data$ALCOHOL>Datazone@data$AlcMort90Urb, paste0(", which is in the <font color='#EE2C2C'>top 10%</font> of neighbourhoods in Urban/Rural group ", Datazone@data$UR6_2013_2014, ".</li></ul>"), paste0(", which is not in the top 10% of neighbourhoods in Urban/Rural group ", Datazone@data$UR6_2013_2014,".</li></ul>")),
+              "<li>The standardised mortality ratio for alcohol related deaths is between ", Datazone@data$Alcrelated_smr2,ifelse(Datazone@data$ALCOHOL>Datazone@data$AlcMort90Urb, paste0(", which is in the <font color='#EE2C2C'>top 10%</font> of neighbourhoods in Urban/Rural group ", Datazone@data$UR6_2013_2014, ".</li></ul>"), paste0(", which is not in the top 10% of neighbourhoods in Urban/Rural group ", Datazone@data$UR6_2013_2014,".</li></ul>")),
               "<b> Crime </b></br>",
               "<ul><li> The number of recorded crimes of violence, sexual offences, domestic housebreaking, vandalism, drugs offences, and common assault is ", Datazone@data$crime_rate, " per 10,000 people, which is ",round((Datazone@data$crime_rate/Datazone@data$CrimemeanUrb*100),0), ifelse(round(Datazone@data$crime_rate, 2)>round(Datazone@data$CrimemeanUrb, 2) , paste0("% of the Urban/Rural group ", Datazone@data$UR6_2013_2014," average.</li>"), paste0("% of the Urban/Rural group ", Datazone@data$UR6_2013_2014," average.</li>")),
               "<li>This datazone is ", ifelse(Datazone@data$crime_rate>Datazone@data$Crime90Urb, paste0("in the <font color='#EE2C2C'>top 10%</font> of neighbourhoods in Urban/Rural group ", Datazone@data$UR6_2013_2014,".</li></ul>"), paste0(" is not in the top 10% of neighbourhoods in Urban/Rural group ", Datazone@data$UR6_2013_2014,".</li></ul>")),
@@ -532,7 +543,7 @@ shinyServer(function(input, output) {
               "<li>",
               ifelse(Datazone@data[,18]>Datazone$Urb90, paste0("This datazone is in the <font color='#EE2C2C'>top 10%</font> of neighbourhoods in Urban/Rural group ", Datazone@data$UR6_2013_2014,".</li></ul>"), paste0("This datazone is not in the top 10% of neighbourhoods in Urban/Rural group ", Datazone@data$UR6_2013_2014,".</li></ul>")),
               "<b> Health </b>",
-              "<ul><li>This standardised mortality ratio for tobacco related deaths is ", round(Datazone@data$Tobrelated_smr,0),ifelse(Datazone@data$Tobrelated_smr>Datazone@data$TobMort90Urb, paste0(", which is in the <font color='#EE2C2C'>top 10%</font> of neighbourhoods in Urban/Rural group ", Datazone@data$UR6_2013_2014, ".</li></ul>"), paste0(", which is not in the top 10% of neighbourhoods in Urban/Rural group ", Datazone@data$UR6_2013_2014,".</li></ul>")),
+              "<ul><li>The standardised mortality ratio for tobacco related deaths is between ", Datazone@data$Tobrelated_smr2,ifelse(Datazone@data$Tobrelated_smr>Datazone@data$TobMort90Urb, paste0(", which is in the <font color='#EE2C2C'>top 10%</font> of neighbourhoods in Urban/Rural group ", Datazone@data$UR6_2013_2014, ".</li></ul>"), paste0(", which is not in the top 10% of neighbourhoods in Urban/Rural group ", Datazone@data$UR6_2013_2014,".</li></ul>")),
               "<b> Crime </b></br>",
               "<ul><li> The number of recorded crimes of violence, sexual offences, domestic housebreaking, vandalism, drugs offences, and common assault is ", Datazone@data$crime_rate, " per 10,000 people, which is ",round((Datazone@data$crime_rate/Datazone@data$CrimemeanUrb*100),0), ifelse(round(Datazone@data$crime_rate, 2)>round(Datazone@data$CrimemeanUrb, 2) , paste0("% of the Urban/Rural group ", Datazone@data$UR6_2013_2014," average.</li>"), paste0("% of the Urban/Rural group ", Datazone@data$UR6_2013_2014," average.</li>")),
               "<li>This datazone is ", ifelse(Datazone@data$crime_rate>Datazone@data$Crime90Urb, paste0("in the <font color='#EE2C2C'>top 10%</font> of neighbourhoods in Urban/Rural group ", Datazone@data$UR6_2013_2014,".</li></ul>"), paste0(" is not in the top 10% of neighbourhoods in Urban/Rural group ", Datazone@data$UR6_2013_2014,".</li></ul>")),
@@ -567,7 +578,7 @@ shinyServer(function(input, output) {
               ifelse(Datazone@data[,18]>Datazone$SIMD90, paste0("This datazone is in the <font color='#EE2C2C'>top 10%</font> of neighbourhoods in SIMD income group ", Datazone@data$SIMDrank5,".</li></ul>"), paste0("This datazone is not in the top 10% of neighbourhoods in SIMD income group ", Datazone@data$SIMDrank5,".</li></ul>")),
               "<b> Health </b>",
               "<ul><li>The standardised ratio of hospital stays related to alcohol misuse is ", Datazone@data$ALCOHOL,ifelse(Datazone@data$ALCOHOL>Datazone@data$HospmeanSIMD, paste0(", which is in the <font color='#EE2C2C'>top 10%</font> of neighbourhoods in SIMD income group ", Datazone@data$SIMDrank5,".</li>"), paste0(", which is not in the top 10% of neighbourhoods in SIMD income group ",Datazone@data$SIMDrank5,".</li>")),
-              "<li>This standardised mortality ratio for alcohol related deaths is ", round(Datazone@data$Alcrelated_smr,0),ifelse(Datazone@data$ALCOHOL>Datazone@data$AlcMort90SIMD, paste0(", which is in the <font color='#EE2C2C'>top 10%</font> of neighbourhoods in SIMD income group ", Datazone@data$SIMDrank5, ".</li></ul>"), paste0(", which is not in the top 10% of neighbourhoods in SIMD income group ", Datazone@data$SIMDrank5,".</li></ul>")),
+              "<li>The standardised mortality ratio for alcohol related deaths is between ", Datazone@data$Alcrelated_smr2,ifelse(Datazone@data$ALCOHOL>Datazone@data$AlcMort90SIMD, paste0(", which is in the <font color='#EE2C2C'>top 10%</font> of neighbourhoods in SIMD income group ", Datazone@data$SIMDrank5, ".</li></ul>"), paste0(", which is not in the top 10% of neighbourhoods in SIMD income group ", Datazone@data$SIMDrank5,".</li></ul>")),
               "<b> Crime </b></br>",
               "<ul><li> The number of recorded crimes of violence, sexual offences, domestic housebreaking, vandalism, drugs offences, and common assault is ", Datazone@data$crime_rate, " per 10,000 people, which is ",round((Datazone@data$crime_rate/Datazone@data$CrimemeanSIMD*100),0), ifelse(round(Datazone@data$crime_rate, 2)>round(Datazone@data$CrimemeanSIMD, 2) , paste0("% of the SIMD income group ", Datazone@data$SIMDrank5," average.</li>"), paste0("% of the SIMD income group ", Datazone@data$SIMDrank5," average.</li>")),
               "<li>This datazone is ", ifelse(Datazone@data$crime_rate>Datazone@data$Crime90SIMD, paste0("in the <font color='#EE2C2C'>top 10%</font> of neighbourhoods in SIMD income group ", Datazone@data$SIMDrank5,".</li></ul>"), paste0(" is not in the top 10% of neighbourhoods in SIMD income group ", Datazone@data$SIMDrank5,".</li></ul>")),
@@ -585,7 +596,7 @@ shinyServer(function(input, output) {
               "<li>",
               ifelse(Datazone@data[,18]>Datazone$SIMD90, paste0("This datazone is in the <font color='#EE2C2C'>top 10%</font> of neighbourhoods in SIMD income group ", Datazone@data$SIMDrank5,".</li></ul>"), paste0("This datazone is not in the top 10% of neighbourhoods in SIMD income group ", Datazone@data$SIMDrank5,".</li></ul>")),
               "<b> Health </b>",
-              "<ul><li>This standardised mortality ratio for tobacco related deaths is ", round(Datazone@data$Tobrelated_smr,0),ifelse(Datazone@data$Tobrelated_smr>Datazone@data$TobMort90SIMD, paste0(", which is in the <font color='#EE2C2C'>top 10%</font> of neighbourhoods in SIMD income group ", Datazone@data$SIMDrank5, ".</li></ul>"), paste0(", which is not in the top 10% of neighbourhoods in SIMD income group ", Datazone@data$SIMDrank5,".</li></ul>")),
+              "<ul><li>The standardised mortality ratio for tobacco related deaths is between ", Datazone@data$Tobrelated_smr2,ifelse(Datazone@data$Tobrelated_smr>Datazone@data$TobMort90SIMD, paste0(", which is in the <font color='#EE2C2C'>top 10%</font> of neighbourhoods in SIMD income group ", Datazone@data$SIMDrank5, ".</li></ul>"), paste0(", which is not in the top 10% of neighbourhoods in SIMD income group ", Datazone@data$SIMDrank5,".</li></ul>")),
               "<b> Crime </b></br>",
               "<ul><li> The number of recorded crimes of violence, sexual offences, domestic housebreaking, vandalism, drugs offences, and common assault is ", Datazone@data$crime_rate, " per 10,000 people, which is ",round((Datazone@data$crime_rate/Datazone@data$CrimemeanSIMD*100),0), ifelse(round(Datazone@data$crime_rate, 2)>round(Datazone@data$CrimemeanSIMD, 2) , paste0("% of the SIMD income group ", Datazone@data$SIMDrank5," average.</li>"), paste0("% of the SIMD income group ", Datazone@data$SIMDrank5," average.</li>")),
               "<li>This datazone is ", ifelse(Datazone@data$crime_rate>Datazone@data$Crime90SIMD, paste0("in the <font color='#EE2C2C'>top 10%</font> of neighbourhoods in SIMD income group ", Datazone@data$SIMDrank5,".</li></ul>"), paste0(" is not in the top 10% of neighbourhoods in SIMD income group ", Datazone@data$SIMDrank5,".</li></ul>")),
@@ -822,6 +833,17 @@ shinyServer(function(input, output) {
           MortAdd<-read.csv("data/Mort.csv")
           MortAdd$Tobrelated_smr<-as.numeric(MortAdd$Tobrelated_smr)
           MortAdd$Alcrelated_smr<-as.numeric(MortAdd$Alcrelated_smr)
+          
+          MortAdd$Alcrelated_smr2<-quantcut(MortAdd$Alcrelated_smr, 5)
+          levels(MortAdd$Alcrelated_smr2)<-sub("\\(|\\[|\\]", "", levels(MortAdd$Alcrelated_smr2))
+          levels(MortAdd$Alcrelated_smr2)<-sub("\\]", "", levels(MortAdd$Alcrelated_smr2))
+          levels(MortAdd$Alcrelated_smr2)<-sub(",", " and ", levels(MortAdd$Alcrelated_smr2))
+          
+          MortAdd$Tobrelated_smr2<-quantcut(MortAdd$Tobrelated_smr, 5)
+          levels(MortAdd$Tobrelated_smr2)<-sub("\\(|\\[|\\]", "", levels(MortAdd$Tobrelated_smr2))
+          levels(MortAdd$Tobrelated_smr2)<-sub("\\]", "", levels(MortAdd$Tobrelated_smr2))
+          levels(MortAdd$Tobrelated_smr2)<-sub(",", " and ", levels(MortAdd$Tobrelated_smr2))
+          
           Datazone<-merge(Datazone, MortAdd,by="code")
           ScottishMortAlc90<-quantile(MortAdd$Alcrelated_smr, c(.90), na.rm=T)
           ScottishMortTob90<-quantile(MortAdd$Tobrelated_smr, c(.90), na.rm=T)
@@ -830,6 +852,7 @@ shinyServer(function(input, output) {
           LAMortAlcmean<-mean(Datazone@data$Alcrelated_smr)
           LAMortAlc90<-quantile(Datazone@data$Alcrelated_smr, c(.90), na.rm=T)
           
+  
           # By SIMD
           MortAdd<-merge(MortAdd, SIMDCalcAdd, by.x="code", by.y="CODE")
           
@@ -926,7 +949,7 @@ shinyServer(function(input, output) {
                 ifelse(Datazone@data[,18]>Scottish90th, "This datazone is in the <font color='#EE2C2C'>top 10%</font> of neighbourhoods in Scotland.</li></ul>", "This datazone is not in the top 10% of neighbourhoods in Scotland.</li></ul>"),
                 "<b> Health </b>",
                 "<ul><li>The standardised ratio of hospital stays related to alcohol misuse is ", Datazone@data$ALCOHOL,ifelse(Datazone@data$ALCOHOL>ScottishHosp90, ", which is in the <font color='#EE2C2C'>top 10%</font> of neighbourhoods in Scotland.</li>", ", which is not in the top 10% of neighbourhoods in Scotland.</li>"),
-                "<li>This standardised mortality ratio for alcohol related deaths is ", round(Datazone@data$Alcrelated_smr,0),ifelse(Datazone@data$ALCOHOL>ScottishMortAlc90, ", which is in the <font color='#EE2C2C'>top 10%</font> of neighbourhoods in Scotland.</li></ul>", ", which is not in the top 10% of neighbourhoods in Scotland.</li></ul>"),
+                "<li>The standardised mortality ratio for alcohol related deaths is between ", Datazone@data$Alcrelated_smr2,ifelse(Datazone@data$ALCOHOL>ScottishMortAlc90, ", which is in the <font color='#EE2C2C'>top 10%</font> of neighbourhoods in Scotland.</li></ul>", ", which is not in the top 10% of neighbourhoods in Scotland.</li></ul>"),
                 "<b> Crime </b></br>",
                 "<ul><li> The number of recorded crimes of violence, sexual offences, domestic housebreaking, vandalism, drugs offences, and common assault is ", Datazone@data$crime_rate, " per 10,000 people, which is ",round((Datazone@data$crime_rate/ScottishCrimeratemean*100),0), ifelse(round(Datazone@data$crime_rate, 2)>round(ScottishCrimeratemean, 2) ,"% of", "% of")," the Scottish average.</li>", 
                 "<li>This datazone is ", ifelse(Datazone@data$crime_rate>ScottishCrimerate90, "in the <font color='#EE2C2C'>top 10%</font> of neighbourhoods in Scotland.</li></ul>", "is not in the top 10% of neighbourhoods in Scotland.</li></ul>"),
@@ -944,7 +967,7 @@ shinyServer(function(input, output) {
                 "<li>",
                 ifelse(Datazone@data[,18]>Scottish90th, "This datazone is in the <font color='#EE2C2C'>top 10%</font> of neighbourhoods in Scotland.</li></ul>", "This datazone is not in the top 10% of neighbourhoods in Scotland.</li></ul>"),
                 "<b> Health </b>",
-                "<ul><li>The standardised mortality ratio for tobaccco related deaths is ", round(Datazone@data$Tobrelated_smr,0),ifelse(Datazone@data$ALCOHOL>ScottishMortTob90, ", which is in the <font color='#EE2C2C'>top 10%</font> of neighbourhoods in Scotland.</li></ul>", ", which is not in the top 10% of neighbourhoods in Scotland.</li></ul>"),
+                "<ul><li>The standardised mortality ratio for tobaccco related deaths is between ", Datazone@data$Tobrelated_smr2,ifelse(Datazone@data$ALCOHOL>ScottishMortTob90, ", which is in the <font color='#EE2C2C'>top 10%</font> of neighbourhoods in Scotland.</li></ul>", ", which is not in the top 10% of neighbourhoods in Scotland.</li></ul>"),
                 "<b> Crime </b></br>",
                 "<ul><li> The number of recorded crimes of violence, sexual offences, domestic housebreaking, vandalism, drugs offences, and common assault is ", Datazone@data$crime_rate, " per 10,000 people, which is ",round((Datazone@data$crime_rate/ScottishCrimeratemean*100),0), ifelse(round(Datazone@data$crime_rate, 2)>round(ScottishCrimeratemean, 2) ,"% of", "% of")," the Scottish average.</li>", 
                 "<li>This datazone is ", ifelse(Datazone@data$crime_rate>ScottishCrimerate90, "in the <font color='#EE2C2C'>top 10%</font> of neighbourhoods in Scotland.</li></ul>", "is not in the top 10% of neighbourhoods in Scotland.</li></ul>"),
@@ -980,7 +1003,7 @@ shinyServer(function(input, output) {
                 ifelse(Datazone@data[,18]>LA90th, paste0("This datazone is in the <font color='#EE2C2C'>top 10%</font> of neighbourhoods in ", input$LAinput,".</li></ul>"), paste0("This datazone is not in the top 10% of neighbourhoods in ", input$LAinput,".</li></ul>")),
                 "<b> Health </b>",
                 "<ul><li>The standardised ratio of hospital stays related to alcohol misuse is ", Datazone@data$ALCOHOL,ifelse(Datazone@data$ALCOHOL>LAHospmean, paste0(", which is in the <font color='#EE2C2C'>top 10%</font> of neighbourhoods in ", input$LAinput,".</li>"), paste0(", which is not in the top 10% of neighbourhoods in ",input$LAinput,".</li>")),
-                "<li>This standardised mortality ratio for alcohol related deaths is ", round(Datazone@data$Alcrelated_smr,0),ifelse(Datazone@data$ALCOHOL>LAMortAlc90, paste0(", which is in the <font color='#EE2C2C'>top 10%</font> of neighbourhoods in ", input$LAinput,".</li></ul>"), paste0(", which is not in the top 10% of neighbourhoods in ", input$LAinput,".</li></ul>")),
+                "<li>The standardised mortality ratio for alcohol related deaths is between ", Datazone@data$Alcrelated_smr2,ifelse(Datazone@data$ALCOHOL>LAMortAlc90, paste0(", which is in the <font color='#EE2C2C'>top 10%</font> of neighbourhoods in ", input$LAinput,".</li></ul>"), paste0(", which is not in the top 10% of neighbourhoods in ", input$LAinput,".</li></ul>")),
                 "<b> Crime </b></br>",
                 "<ul><li> The number of recorded crimes of violence, sexual offences, domestic housebreaking, vandalism, drugs offences, and common assault is ", Datazone@data$crime_rate, " per 10,000 people, which is ",round((Datazone@data$crime_rate/LACrimemean*100),0), ifelse(round(Datazone@data$crime_rate, 2)>round(LACrimemean, 2) , paste0("% of the ", input$LAinput," average.</li>"), paste0("% of the ", input$LAinput," average.</li>")),
                 "<li>This datazone is ", ifelse(Datazone@data$crime_rate>LACrime90, paste0("in the <font color='#EE2C2C'>top 10%</font> of neighbourhoods in ", input$LAinput,".</li></ul>"), paste0(" is not in the top 10% of neighbourhoods in ", input$LAinput,".</li></ul>")),
@@ -998,7 +1021,7 @@ shinyServer(function(input, output) {
                 "<li>",
                 ifelse(Datazone@data[,18]>LA90th, "This datazone is in the <font color='#EE2C2C'>top 10%</font> of neighbourhoods in Scotland.</li></ul>", "This datazone is not in the top 10% of neighbourhoods in Scotland.</li></ul>"),
                 "<b> Health </b>",
-                "<ul><li>This standardised mortality ratio for tobacco related deaths is ", round(Datazone@data$Tobrelated_smr,0),ifelse(Datazone@data$TOBACCO>LAMortTob90, paste0(", which is in the <font color='#EE2C2C'>top 10%</font> of neighbourhoods in", input$LAinput,".</li></ul>"), paste0(", which is not in the top 10% of neighbourhoods in ", input$LAinput,".</li></ul>")),
+                "<ul><li>The standardised mortality ratio for tobacco related deaths is between ", Datazone@data$Tobrelated_smr2,ifelse(Datazone@data$TOBACCO>LAMortTob90, paste0(", which is in the <font color='#EE2C2C'>top 10%</font> of neighbourhoods in", input$LAinput,".</li></ul>"), paste0(", which is not in the top 10% of neighbourhoods in ", input$LAinput,".</li></ul>")),
                 "<b> Crime </b></br>",
                 "<ul><li> The number of recorded crimes of violence, sexual offences, domestic housebreaking, vandalism, drugs offences, and common assault is ", Datazone@data$crime_rate, " per 10,000 people, which is ",round((Datazone@data$crime_rate/LACrimemean*100),0), ifelse(round(Datazone@data$crime_rate, 2)>round(LACrimemean, 2) , paste0("% of the ", input$LAinput," average.</li>"), paste0("% of the ", input$LAinput," average.</li>")),
                 "<li>This datazone is ", ifelse(Datazone@data$crime_rate>LACrime90, paste0("in the <font color='#EE2C2C'>top 10%</font> of neighbourhoods in ", input$LAinput,".</li></ul>"), paste0(" is not in the top 10% of neighbourhoods in ", input$LAinput,".</li></ul>")),
@@ -1032,7 +1055,7 @@ shinyServer(function(input, output) {
                 ifelse(Datazone@data[,18]>Datazone@data$UR6_2013_201490, paste0("This datazone is in the <font color='#EE2C2C'>top 10%</font> of neighbourhoods in Urban/rural group ", Datazone@data$UR6_2013_2014,".</li></ul>"), paste0("This datazone is not in the top 10% of neighbourhoods in Urban/Rural group ", Datazone@data$UR6_2013_2014,".</li></ul>")),
                 "<b> Health </b>",
                 "<ul><li>The standardised ratio of hospital stays related to alcohol misuse is ", Datazone@data$ALCOHOL,ifelse(Datazone@data$ALCOHOL>Datazone@data$Hosp90Urb, paste0(", which is in the <font color='#EE2C2C'>top 10%</font> of neighbourhoods in Urban/Rural group ", Datazone@data$UR6_2013_2014,".</li>"), paste0(", which is not in the top 10% of neighbourhoods in Urban/Rural group ",Datazone@data$UR6_2013_2014,".</li>")),
-                "<li>This standardised mortality ratio for alcohol related deaths is ", round(Datazone@data$Alcrelated_smr,0),ifelse(Datazone@data$ALCOHOL>Datazone@data$AlcMort90Urb, paste0(", which is in the <font color='#EE2C2C'>top 10%</font> of neighbourhoods in Urban/Rural group ", Datazone@data$UR6_2013_2014, ".</li></ul>"), paste0(", which is not in the top 10% of neighbourhoods in Urban/Rural group ", Datazone@data$UR6_2013_2014,".</li></ul>")),
+                "<li>The standardised mortality ratio for alcohol related deaths is between ", Datazone@data$Alcrelated_smr2,ifelse(Datazone@data$ALCOHOL>Datazone@data$AlcMort90Urb, paste0(", which is in the <font color='#EE2C2C'>top 10%</font> of neighbourhoods in Urban/Rural group ", Datazone@data$UR6_2013_2014, ".</li></ul>"), paste0(", which is not in the top 10% of neighbourhoods in Urban/Rural group ", Datazone@data$UR6_2013_2014,".</li></ul>")),
                 "<b> Crime </b></br>",
                 "<ul><li> The number of recorded crimes of violence, sexual offences, domestic housebreaking, vandalism, drugs offences, and common assault is ", Datazone@data$crime_rate, " per 10,000 people, which is ",round((Datazone@data$crime_rate/Datazone@data$CrimemeanUrb*100),0), ifelse(round(Datazone@data$crime_rate, 2)>round(Datazone@data$CrimemeanUrb, 2) , paste0("% of the Urban/Rural group ", Datazone@data$UR6_2013_2014," average.</li>"), paste0("% of the Urban/Rural group ", Datazone@data$UR6_2013_2014," average.</li>")),
                 "<li>This datazone is ", ifelse(Datazone@data$crime_rate>Datazone@data$Crime90Urb, paste0("in the <font color='#EE2C2C'>top 10%</font> of neighbourhoods in Urban/Rural group ", Datazone@data$UR6_2013_2014,".</li></ul>"), paste0(" is not in the top 10% of neighbourhoods in Urban/Rural group ", Datazone@data$UR6_2013_2014,".</li></ul>")),
@@ -1050,7 +1073,7 @@ shinyServer(function(input, output) {
                 "<li>",
                 ifelse(Datazone@data[,18]>Datazone$Urb90, paste0("This datazone is in the <font color='#EE2C2C'>top 10%</font> of neighbourhoods in Urban/Rural group ", Datazone@data$UR6_2013_2014,".</li></ul>"), paste0("This datazone is not in the top 10% of neighbourhoods in Urban/Rural group ", Datazone@data$UR6_2013_2014,".</li></ul>")),
                 "<b> Health </b>",
-                "<ul><li>This standardised mortality ratio for tobacco related deaths is ", round(Datazone@data$Tobrelated_smr,0),ifelse(Datazone@data$Tobrelated_smr>Datazone@data$TobMort90Urb, paste0(", which is in the <font color='#EE2C2C'>top 10%</font> of neighbourhoods in Urban/Rural group ", Datazone@data$UR6_2013_2014, ".</li></ul>"), paste0(", which is not in the top 10% of neighbourhoods in Urban/Rural group ", Datazone@data$UR6_2013_2014,".</li></ul>")),
+                "<ul><li>The standardised mortality ratio for tobacco related deaths is between ", Datazone@data$Tobrelated_smr2,ifelse(Datazone@data$Tobrelated_smr>Datazone@data$TobMort90Urb, paste0(", which is in the <font color='#EE2C2C'>top 10%</font> of neighbourhoods in Urban/Rural group ", Datazone@data$UR6_2013_2014, ".</li></ul>"), paste0(", which is not in the top 10% of neighbourhoods in Urban/Rural group ", Datazone@data$UR6_2013_2014,".</li></ul>")),
                 "<b> Crime </b></br>",
                 "<ul><li> The number of recorded crimes of violence, sexual offences, domestic housebreaking, vandalism, drugs offences, and common assault is ", Datazone@data$crime_rate, " per 10,000 people, which is ",round((Datazone@data$crime_rate/Datazone@data$CrimemeanUrb*100),0), ifelse(round(Datazone@data$crime_rate, 2)>round(Datazone@data$CrimemeanUrb, 2) , paste0("% of the Urban/Rural group ", Datazone@data$UR6_2013_2014," average.</li>"), paste0("% of the Urban/Rural group ", Datazone@data$UR6_2013_2014," average.</li>")),
                 "<li>This datazone is ", ifelse(Datazone@data$crime_rate>Datazone@data$Crime90Urb, paste0("in the <font color='#EE2C2C'>top 10%</font> of neighbourhoods in Urban/Rural group ", Datazone@data$UR6_2013_2014,".</li></ul>"), paste0(" is not in the top 10% of neighbourhoods in Urban/Rural group ", Datazone@data$UR6_2013_2014,".</li></ul>")),
@@ -1085,7 +1108,7 @@ shinyServer(function(input, output) {
                 ifelse(Datazone@data[,18]>Datazone$SIMD90, paste0("This datazone is in the <font color='#EE2C2C'>top 10%</font> of neighbourhoods in SIMD income group ", Datazone@data$SIMDrank5,".</li></ul>"), paste0("This datazone is not in the top 10% of neighbourhoods in SIMD income group ", Datazone@data$SIMDrank5,".</li></ul>")),
                 "<b> Health </b>",
                 "<ul><li>The standardised ratio of hospital stays related to alcohol misuse is ", Datazone@data$ALCOHOL,ifelse(Datazone@data$ALCOHOL>Datazone@data$HospmeanSIMD, paste0(", which is in the <font color='#EE2C2C'>top 10%</font> of neighbourhoods in SIMD income group ", Datazone@data$SIMDrank5,".</li>"), paste0(", which is not in the top 10% of neighbourhoods in SIMD income group ",Datazone@data$SIMDrank5,".</li>")),
-                "<li>This standardised mortality ratio for alcohol related deaths is ", round(Datazone@data$Alcrelated_smr,0),ifelse(Datazone@data$ALCOHOL>Datazone@data$AlcMort90SIMD, paste0(", which is in the <font color='#EE2C2C'>top 10%</font> of neighbourhoods in SIMD income group ", Datazone@data$SIMDrank5, ".</li></ul>"), paste0(", which is not in the top 10% of neighbourhoods in SIMD income group ", Datazone@data$SIMDrank5,".</li></ul>")),
+                "<li>The standardised mortality ratio for alcohol related deaths is between ", Datazone@data$Alcrelated_smr2,ifelse(Datazone@data$ALCOHOL>Datazone@data$AlcMort90SIMD, paste0(", which is in the <font color='#EE2C2C'>top 10%</font> of neighbourhoods in SIMD income group ", Datazone@data$SIMDrank5, ".</li></ul>"), paste0(", which is not in the top 10% of neighbourhoods in SIMD income group ", Datazone@data$SIMDrank5,".</li></ul>")),
                 "<b> Crime </b></br>",
                 "<ul><li> The number of recorded crimes of violence, sexual offences, domestic housebreaking, vandalism, drugs offences, and common assault is ", Datazone@data$crime_rate, " per 10,000 people, which is ",round((Datazone@data$crime_rate/Datazone@data$CrimemeanSIMD*100),0), ifelse(round(Datazone@data$crime_rate, 2)>round(Datazone@data$CrimemeanSIMD, 2) , paste0("% of the SIMD income group ", Datazone@data$SIMDrank5," average.</li>"), paste0("% of the SIMD income group ", Datazone@data$SIMDrank5," average.</li>")),
                 "<li>This datazone is ", ifelse(Datazone@data$crime_rate>Datazone@data$Crime90SIMD, paste0("in the <font color='#EE2C2C'>top 10%</font> of neighbourhoods in SIMD income group ", Datazone@data$SIMDrank5,".</li></ul>"), paste0(" is not in the top 10% of neighbourhoods in SIMD income group ", Datazone@data$SIMDrank5,".</li></ul>")),
@@ -1103,7 +1126,7 @@ shinyServer(function(input, output) {
                 "<li>",
                 ifelse(Datazone@data[,18]>Datazone$SIMD90, paste0("This datazone is in the <font color='#EE2C2C'>top 10%</font> of neighbourhoods in SIMD income group ", Datazone@data$SIMDrank5,".</li></ul>"), paste0("This datazone is not in the top 10% of neighbourhoods in SIMD income group ", Datazone@data$SIMDrank5,".</li></ul>")),
                 "<b> Health </b>",
-                "<ul><li>This standardised mortality ratio for tobacco related deaths is ", round(Datazone@data$Tobrelated_smr,0),ifelse(Datazone@data$Tobrelated_smr>Datazone@data$TobMort90SIMD, paste0(", which is in the <font color='#EE2C2C'>top 10%</font> of neighbourhoods in SIMD income group ", Datazone@data$SIMDrank5, ".</li></ul>"), paste0(", which is not in the top 10% of neighbourhoods in SIMD income group ", Datazone@data$SIMDrank5,".</li></ul>")),
+                "<ul><li>The standardised mortality ratio for tobacco related deaths is between ", Datazone@data$Tobrelated_smr2,ifelse(Datazone@data$Tobrelated_smr>Datazone@data$TobMort90SIMD, paste0(", which is in the <font color='#EE2C2C'>top 10%</font> of neighbourhoods in SIMD income group ", Datazone@data$SIMDrank5, ".</li></ul>"), paste0(", which is not in the top 10% of neighbourhoods in SIMD income group ", Datazone@data$SIMDrank5,".</li></ul>")),
                 "<b> Crime </b></br>",
                 "<ul><li> The number of recorded crimes of violence, sexual offences, domestic housebreaking, vandalism, drugs offences, and common assault is ", Datazone@data$crime_rate, " per 10,000 people, which is ",round((Datazone@data$crime_rate/Datazone@data$CrimemeanSIMD*100),0), ifelse(round(Datazone@data$crime_rate, 2)>round(Datazone@data$CrimemeanSIMD, 2) , paste0("% of the SIMD income group ", Datazone@data$SIMDrank5," average.</li>"), paste0("% of the SIMD income group ", Datazone@data$SIMDrank5," average.</li>")),
                 "<li>This datazone is ", ifelse(Datazone@data$crime_rate>Datazone@data$Crime90SIMD, paste0("in the <font color='#EE2C2C'>top 10%</font> of neighbourhoods in SIMD income group ", Datazone@data$SIMDrank5,".</li></ul>"), paste0(" is not in the top 10% of neighbourhoods in SIMD income group ", Datazone@data$SIMDrank5,".</li></ul>")),
@@ -1351,6 +1374,17 @@ shinyServer(function(input, output) {
             MortAdd<-read.csv("data/Mort.csv")
             MortAdd$Tobrelated_smr<-as.numeric(MortAdd$Tobrelated_smr)
             MortAdd$Alcrelated_smr<-as.numeric(MortAdd$Alcrelated_smr)
+            
+            MortAdd$Alcrelated_smr2<-quantcut(MortAdd$Alcrelated_smr, 5)
+            levels(MortAdd$Alcrelated_smr2)<-sub("\\(|\\[|\\]", "", levels(MortAdd$Alcrelated_smr2))
+            levels(MortAdd$Alcrelated_smr2)<-sub("\\]", "", levels(MortAdd$Alcrelated_smr2))
+            levels(MortAdd$Alcrelated_smr2)<-sub(",", " and ", levels(MortAdd$Alcrelated_smr2))
+            
+            MortAdd$Tobrelated_smr2<-quantcut(MortAdd$Tobrelated_smr, 5)
+            levels(MortAdd$Tobrelated_smr2)<-sub("\\(|\\[|\\]", "", levels(MortAdd$Tobrelated_smr2))
+            levels(MortAdd$Tobrelated_smr2)<-sub("\\]", "", levels(MortAdd$Tobrelated_smr2))
+            levels(MortAdd$Tobrelated_smr2)<-sub(",", " and ", levels(MortAdd$Tobrelated_smr2))
+            
             Datazone<-merge(Datazone, MortAdd,by="code")
             ScottishMortAlc90<-quantile(MortAdd$Alcrelated_smr, c(.90), na.rm=T)
             ScottishMortTob90<-quantile(MortAdd$Tobrelated_smr, c(.90), na.rm=T)
@@ -1358,6 +1392,7 @@ shinyServer(function(input, output) {
             LAMortTob90<-quantile(Datazone@data$Tobrelated_smr, c(.90), na.rm=T)
             LAMortAlcmean<-mean(Datazone@data$Alcrelated_smr)
             LAMortAlc90<-quantile(Datazone@data$Alcrelated_smr, c(.90), na.rm=T)
+            
             
             # By SIMD
             MortAdd<-merge(MortAdd, SIMDCalcAdd, by.x="code", by.y="CODE")
@@ -1455,7 +1490,7 @@ shinyServer(function(input, output) {
                   ifelse(Datazone@data[,18]>Scottish90th, "This datazone is in the <font color='#EE2C2C'>top 10%</font> of neighbourhoods in Scotland.</li></ul>", "This datazone is not in the top 10% of neighbourhoods in Scotland.</li></ul>"),
                   "<b> Health </b>",
                   "<ul><li>The standardised ratio of hospital stays related to alcohol misuse is ", Datazone@data$ALCOHOL,ifelse(Datazone@data$ALCOHOL>ScottishHosp90, ", which is in the <font color='#EE2C2C'>top 10%</font> of neighbourhoods in Scotland.</li>", ", which is not in the top 10% of neighbourhoods in Scotland.</li>"),
-                  "<li>This standardised mortality ratio for alcohol related deaths is ", round(Datazone@data$Alcrelated_smr,0),ifelse(Datazone@data$ALCOHOL>ScottishMortAlc90, ", which is in the <font color='#EE2C2C'>top 10%</font> of neighbourhoods in Scotland.</li></ul>", ", which is not in the top 10% of neighbourhoods in Scotland.</li></ul>"),
+                  "<li>The standardised mortality ratio for alcohol related deaths is between ", Datazone@data$Alcrelated_smr2,ifelse(Datazone@data$ALCOHOL>ScottishMortAlc90, ", which is in the <font color='#EE2C2C'>top 10%</font> of neighbourhoods in Scotland.</li></ul>", ", which is not in the top 10% of neighbourhoods in Scotland.</li></ul>"),
                   "<b> Crime </b></br>",
                   "<ul><li> The number of recorded crimes of violence, sexual offences, domestic housebreaking, vandalism, drugs offences, and common assault is ", Datazone@data$crime_rate, " per 10,000 people, which is ",round((Datazone@data$crime_rate/ScottishCrimeratemean*100),0), ifelse(round(Datazone@data$crime_rate, 2)>round(ScottishCrimeratemean, 2) ,"% of", "% of")," the Scottish average.</li>", 
                   "<li>This datazone is ", ifelse(Datazone@data$crime_rate>ScottishCrimerate90, "in the <font color='#EE2C2C'>top 10%</font> of neighbourhoods in Scotland.</li></ul>", "is not in the top 10% of neighbourhoods in Scotland.</li></ul>"),
@@ -1473,7 +1508,7 @@ shinyServer(function(input, output) {
                   "<li>",
                   ifelse(Datazone@data[,18]>Scottish90th, "This datazone is in the <font color='#EE2C2C'>top 10%</font> of neighbourhoods in Scotland.</li></ul>", "This datazone is not in the top 10% of neighbourhoods in Scotland.</li></ul>"),
                   "<b> Health </b>",
-                  "<ul><li>The standardised mortality ratio for tobaccco related deaths is ", round(Datazone@data$Tobrelated_smr,0),ifelse(Datazone@data$ALCOHOL>ScottishMortTob90, ", which is in the <font color='#EE2C2C'>top 10%</font> of neighbourhoods in Scotland.</li></ul>", ", which is not in the top 10% of neighbourhoods in Scotland.</li></ul>"),
+                  "<ul><li>The standardised mortality ratio for tobaccco related deaths is between ", Datazone@data$Tobrelated_smr2,ifelse(Datazone@data$ALCOHOL>ScottishMortTob90, ", which is in the <font color='#EE2C2C'>top 10%</font> of neighbourhoods in Scotland.</li></ul>", ", which is not in the top 10% of neighbourhoods in Scotland.</li></ul>"),
                   "<b> Crime </b></br>",
                   "<ul><li> The number of recorded crimes of violence, sexual offences, domestic housebreaking, vandalism, drugs offences, and common assault is ", Datazone@data$crime_rate, " per 10,000 people, which is ",round((Datazone@data$crime_rate/ScottishCrimeratemean*100),0), ifelse(round(Datazone@data$crime_rate, 2)>round(ScottishCrimeratemean, 2) ,"% of", "% of")," the Scottish average.</li>", 
                   "<li>This datazone is ", ifelse(Datazone@data$crime_rate>ScottishCrimerate90, "in the <font color='#EE2C2C'>top 10%</font> of neighbourhoods in Scotland.</li></ul>", "is not in the top 10% of neighbourhoods in Scotland.</li></ul>"),
@@ -1509,7 +1544,7 @@ shinyServer(function(input, output) {
                   ifelse(Datazone@data[,18]>LA90th, paste0("This datazone is in the <font color='#EE2C2C'>top 10%</font> of neighbourhoods in ", input$LAinput,".</li></ul>"), paste0("This datazone is not in the top 10% of neighbourhoods in ", input$LAinput,".</li></ul>")),
                   "<b> Health </b>",
                   "<ul><li>The standardised ratio of hospital stays related to alcohol misuse is ", Datazone@data$ALCOHOL,ifelse(Datazone@data$ALCOHOL>LAHospmean, paste0(", which is in the <font color='#EE2C2C'>top 10%</font> of neighbourhoods in ", input$LAinput,".</li>"), paste0(", which is not in the top 10% of neighbourhoods in ",input$LAinput,".</li>")),
-                  "<li>This standardised mortality ratio for alcohol related deaths is ", round(Datazone@data$Alcrelated_smr,0),ifelse(Datazone@data$ALCOHOL>LAMortAlc90, paste0(", which is in the <font color='#EE2C2C'>top 10%</font> of neighbourhoods in ", input$LAinput,".</li></ul>"), paste0(", which is not in the top 10% of neighbourhoods in ", input$LAinput,".</li></ul>")),
+                  "<li>The standardised mortality ratio for alcohol related deaths is between ", Datazone@data$Alcrelated_smr2,ifelse(Datazone@data$ALCOHOL>LAMortAlc90, paste0(", which is in the <font color='#EE2C2C'>top 10%</font> of neighbourhoods in ", input$LAinput,".</li></ul>"), paste0(", which is not in the top 10% of neighbourhoods in ", input$LAinput,".</li></ul>")),
                   "<b> Crime </b></br>",
                   "<ul><li> The number of recorded crimes of violence, sexual offences, domestic housebreaking, vandalism, drugs offences, and common assault is ", Datazone@data$crime_rate, " per 10,000 people, which is ",round((Datazone@data$crime_rate/LACrimemean*100),0), ifelse(round(Datazone@data$crime_rate, 2)>round(LACrimemean, 2) , paste0("% of the ", input$LAinput," average.</li>"), paste0("% of the ", input$LAinput," average.</li>")),
                   "<li>This datazone is ", ifelse(Datazone@data$crime_rate>LACrime90, paste0("in the <font color='#EE2C2C'>top 10%</font> of neighbourhoods in ", input$LAinput,".</li></ul>"), paste0(" is not in the top 10% of neighbourhoods in ", input$LAinput,".</li></ul>")),
@@ -1527,7 +1562,7 @@ shinyServer(function(input, output) {
                   "<li>",
                   ifelse(Datazone@data[,18]>LA90th, "This datazone is in the <font color='#EE2C2C'>top 10%</font> of neighbourhoods in Scotland.</li></ul>", "This datazone is not in the top 10% of neighbourhoods in Scotland.</li></ul>"),
                   "<b> Health </b>",
-                  "<ul><li>This standardised mortality ratio for tobacco related deaths is ", round(Datazone@data$Tobrelated_smr,0),ifelse(Datazone@data$TOBACCO>LAMortTob90, paste0(", which is in the <font color='#EE2C2C'>top 10%</font> of neighbourhoods in", input$LAinput,".</li></ul>"), paste0(", which is not in the top 10% of neighbourhoods in ", input$LAinput,".</li></ul>")),
+                  "<ul><li>The standardised mortality ratio for tobacco related deaths is between ", Datazone@data$Tobrelated_smr2,ifelse(Datazone@data$TOBACCO>LAMortTob90, paste0(", which is in the <font color='#EE2C2C'>top 10%</font> of neighbourhoods in", input$LAinput,".</li></ul>"), paste0(", which is not in the top 10% of neighbourhoods in ", input$LAinput,".</li></ul>")),
                   "<b> Crime </b></br>",
                   "<ul><li> The number of recorded crimes of violence, sexual offences, domestic housebreaking, vandalism, drugs offences, and common assault is ", Datazone@data$crime_rate, " per 10,000 people, which is ",round((Datazone@data$crime_rate/LACrimemean*100),0), ifelse(round(Datazone@data$crime_rate, 2)>round(LACrimemean, 2) , paste0("% of the ", input$LAinput," average.</li>"), paste0("% of the ", input$LAinput," average.</li>")),
                   "<li>This datazone is ", ifelse(Datazone@data$crime_rate>LACrime90, paste0("in the <font color='#EE2C2C'>top 10%</font> of neighbourhoods in ", input$LAinput,".</li></ul>"), paste0(" is not in the top 10% of neighbourhoods in ", input$LAinput,".</li></ul>")),
@@ -1561,7 +1596,7 @@ shinyServer(function(input, output) {
                   ifelse(Datazone@data[,18]>Datazone@data$UR6_2013_201490, paste0("This datazone is in the <font color='#EE2C2C'>top 10%</font> of neighbourhoods in Urban/rural group ", Datazone@data$UR6_2013_2014,".</li></ul>"), paste0("This datazone is not in the top 10% of neighbourhoods in Urban/Rural group ", Datazone@data$UR6_2013_2014,".</li></ul>")),
                   "<b> Health </b>",
                   "<ul><li>The standardised ratio of hospital stays related to alcohol misuse is ", Datazone@data$ALCOHOL,ifelse(Datazone@data$ALCOHOL>Datazone@data$Hosp90Urb, paste0(", which is in the <font color='#EE2C2C'>top 10%</font> of neighbourhoods in Urban/Rural group ", Datazone@data$UR6_2013_2014,".</li>"), paste0(", which is not in the top 10% of neighbourhoods in Urban/Rural group ",Datazone@data$UR6_2013_2014,".</li>")),
-                  "<li>This standardised mortality ratio for alcohol related deaths is ", round(Datazone@data$Alcrelated_smr,0),ifelse(Datazone@data$ALCOHOL>Datazone@data$AlcMort90Urb, paste0(", which is in the <font color='#EE2C2C'>top 10%</font> of neighbourhoods in Urban/Rural group ", Datazone@data$UR6_2013_2014, ".</li></ul>"), paste0(", which is not in the top 10% of neighbourhoods in Urban/Rural group ", Datazone@data$UR6_2013_2014,".</li></ul>")),
+                  "<li>The standardised mortality ratio for alcohol related deaths is between ", Datazone@data$Alcrelated_smr2,ifelse(Datazone@data$ALCOHOL>Datazone@data$AlcMort90Urb, paste0(", which is in the <font color='#EE2C2C'>top 10%</font> of neighbourhoods in Urban/Rural group ", Datazone@data$UR6_2013_2014, ".</li></ul>"), paste0(", which is not in the top 10% of neighbourhoods in Urban/Rural group ", Datazone@data$UR6_2013_2014,".</li></ul>")),
                   "<b> Crime </b></br>",
                   "<ul><li> The number of recorded crimes of violence, sexual offences, domestic housebreaking, vandalism, drugs offences, and common assault is ", Datazone@data$crime_rate, " per 10,000 people, which is ",round((Datazone@data$crime_rate/Datazone@data$CrimemeanUrb*100),0), ifelse(round(Datazone@data$crime_rate, 2)>round(Datazone@data$CrimemeanUrb, 2) , paste0("% of the Urban/Rural group ", Datazone@data$UR6_2013_2014," average.</li>"), paste0("% of the Urban/Rural group ", Datazone@data$UR6_2013_2014," average.</li>")),
                   "<li>This datazone is ", ifelse(Datazone@data$crime_rate>Datazone@data$Crime90Urb, paste0("in the <font color='#EE2C2C'>top 10%</font> of neighbourhoods in Urban/Rural group ", Datazone@data$UR6_2013_2014,".</li></ul>"), paste0(" is not in the top 10% of neighbourhoods in Urban/Rural group ", Datazone@data$UR6_2013_2014,".</li></ul>")),
@@ -1579,7 +1614,7 @@ shinyServer(function(input, output) {
                   "<li>",
                   ifelse(Datazone@data[,18]>Datazone$Urb90, paste0("This datazone is in the <font color='#EE2C2C'>top 10%</font> of neighbourhoods in Urban/Rural group ", Datazone@data$UR6_2013_2014,".</li></ul>"), paste0("This datazone is not in the top 10% of neighbourhoods in Urban/Rural group ", Datazone@data$UR6_2013_2014,".</li></ul>")),
                   "<b> Health </b>",
-                  "<ul><li>This standardised mortality ratio for tobacco related deaths is ", round(Datazone@data$Tobrelated_smr,0),ifelse(Datazone@data$Tobrelated_smr>Datazone@data$TobMort90Urb, paste0(", which is in the <font color='#EE2C2C'>top 10%</font> of neighbourhoods in Urban/Rural group ", Datazone@data$UR6_2013_2014, ".</li></ul>"), paste0(", which is not in the top 10% of neighbourhoods in Urban/Rural group ", Datazone@data$UR6_2013_2014,".</li></ul>")),
+                  "<ul><li>The standardised mortality ratio for tobacco related deaths is between ", Datazone@data$Tobrelated_smr2,ifelse(Datazone@data$Tobrelated_smr>Datazone@data$TobMort90Urb, paste0(", which is in the <font color='#EE2C2C'>top 10%</font> of neighbourhoods in Urban/Rural group ", Datazone@data$UR6_2013_2014, ".</li></ul>"), paste0(", which is not in the top 10% of neighbourhoods in Urban/Rural group ", Datazone@data$UR6_2013_2014,".</li></ul>")),
                   "<b> Crime </b></br>",
                   "<ul><li> The number of recorded crimes of violence, sexual offences, domestic housebreaking, vandalism, drugs offences, and common assault is ", Datazone@data$crime_rate, " per 10,000 people, which is ",round((Datazone@data$crime_rate/Datazone@data$CrimemeanUrb*100),0), ifelse(round(Datazone@data$crime_rate, 2)>round(Datazone@data$CrimemeanUrb, 2) , paste0("% of the Urban/Rural group ", Datazone@data$UR6_2013_2014," average.</li>"), paste0("% of the Urban/Rural group ", Datazone@data$UR6_2013_2014," average.</li>")),
                   "<li>This datazone is ", ifelse(Datazone@data$crime_rate>Datazone@data$Crime90Urb, paste0("in the <font color='#EE2C2C'>top 10%</font> of neighbourhoods in Urban/Rural group ", Datazone@data$UR6_2013_2014,".</li></ul>"), paste0(" is not in the top 10% of neighbourhoods in Urban/Rural group ", Datazone@data$UR6_2013_2014,".</li></ul>")),
@@ -1614,7 +1649,7 @@ shinyServer(function(input, output) {
                   ifelse(Datazone@data[,18]>Datazone$SIMD90, paste0("This datazone is in the <font color='#EE2C2C'>top 10%</font> of neighbourhoods in SIMD income group ", Datazone@data$SIMDrank5,".</li></ul>"), paste0("This datazone is not in the top 10% of neighbourhoods in SIMD income group ", Datazone@data$SIMDrank5,".</li></ul>")),
                   "<b> Health </b>",
                   "<ul><li>The standardised ratio of hospital stays related to alcohol misuse is ", Datazone@data$ALCOHOL,ifelse(Datazone@data$ALCOHOL>Datazone@data$HospmeanSIMD, paste0(", which is in the <font color='#EE2C2C'>top 10%</font> of neighbourhoods in SIMD income group ", Datazone@data$SIMDrank5,".</li>"), paste0(", which is not in the top 10% of neighbourhoods in SIMD income group ",Datazone@data$SIMDrank5,".</li>")),
-                  "<li>This standardised mortality ratio for alcohol related deaths is ", round(Datazone@data$Alcrelated_smr,0),ifelse(Datazone@data$ALCOHOL>Datazone@data$AlcMort90SIMD, paste0(", which is in the <font color='#EE2C2C'>top 10%</font> of neighbourhoods in SIMD income group ", Datazone@data$SIMDrank5, ".</li></ul>"), paste0(", which is not in the top 10% of neighbourhoods in SIMD income group ", Datazone@data$SIMDrank5,".</li></ul>")),
+                  "<li>The standardised mortality ratio for alcohol related deaths is between ", Datazone@data$Alcrelated_smr2,ifelse(Datazone@data$ALCOHOL>Datazone@data$AlcMort90SIMD, paste0(", which is in the <font color='#EE2C2C'>top 10%</font> of neighbourhoods in SIMD income group ", Datazone@data$SIMDrank5, ".</li></ul>"), paste0(", which is not in the top 10% of neighbourhoods in SIMD income group ", Datazone@data$SIMDrank5,".</li></ul>")),
                   "<b> Crime </b></br>",
                   "<ul><li> The number of recorded crimes of violence, sexual offences, domestic housebreaking, vandalism, drugs offences, and common assault is ", Datazone@data$crime_rate, " per 10,000 people, which is ",round((Datazone@data$crime_rate/Datazone@data$CrimemeanSIMD*100),0), ifelse(round(Datazone@data$crime_rate, 2)>round(Datazone@data$CrimemeanSIMD, 2) , paste0("% of the SIMD income group ", Datazone@data$SIMDrank5," average.</li>"), paste0("% of the SIMD income group ", Datazone@data$SIMDrank5," average.</li>")),
                   "<li>This datazone is ", ifelse(Datazone@data$crime_rate>Datazone@data$Crime90SIMD, paste0("in the <font color='#EE2C2C'>top 10%</font> of neighbourhoods in SIMD income group ", Datazone@data$SIMDrank5,".</li></ul>"), paste0(" is not in the top 10% of neighbourhoods in SIMD income group ", Datazone@data$SIMDrank5,".</li></ul>")),
@@ -1632,7 +1667,7 @@ shinyServer(function(input, output) {
                   "<li>",
                   ifelse(Datazone@data[,18]>Datazone$SIMD90, paste0("This datazone is in the <font color='#EE2C2C'>top 10%</font> of neighbourhoods in SIMD income group ", Datazone@data$SIMDrank5,".</li></ul>"), paste0("This datazone is not in the top 10% of neighbourhoods in SIMD income group ", Datazone@data$SIMDrank5,".</li></ul>")),
                   "<b> Health </b>",
-                  "<ul><li>This standardised mortality ratio for tobacco related deaths is ", round(Datazone@data$Tobrelated_smr,0),ifelse(Datazone@data$Tobrelated_smr>Datazone@data$TobMort90SIMD, paste0(", which is in the <font color='#EE2C2C'>top 10%</font> of neighbourhoods in SIMD income group ", Datazone@data$SIMDrank5, ".</li></ul>"), paste0(", which is not in the top 10% of neighbourhoods in SIMD income group ", Datazone@data$SIMDrank5,".</li></ul>")),
+                  "<ul><li>The standardised mortality ratio for tobacco related deaths is between ", Datazone@data$Tobrelated_smr2,ifelse(Datazone@data$Tobrelated_smr>Datazone@data$TobMort90SIMD, paste0(", which is in the <font color='#EE2C2C'>top 10%</font> of neighbourhoods in SIMD income group ", Datazone@data$SIMDrank5, ".</li></ul>"), paste0(", which is not in the top 10% of neighbourhoods in SIMD income group ", Datazone@data$SIMDrank5,".</li></ul>")),
                   "<b> Crime </b></br>",
                   "<ul><li> The number of recorded crimes of violence, sexual offences, domestic housebreaking, vandalism, drugs offences, and common assault is ", Datazone@data$crime_rate, " per 10,000 people, which is ",round((Datazone@data$crime_rate/Datazone@data$CrimemeanSIMD*100),0), ifelse(round(Datazone@data$crime_rate, 2)>round(Datazone@data$CrimemeanSIMD, 2) , paste0("% of the SIMD income group ", Datazone@data$SIMDrank5," average.</li>"), paste0("% of the SIMD income group ", Datazone@data$SIMDrank5," average.</li>")),
                   "<li>This datazone is ", ifelse(Datazone@data$crime_rate>Datazone@data$Crime90SIMD, paste0("in the <font color='#EE2C2C'>top 10%</font> of neighbourhoods in SIMD income group ", Datazone@data$SIMDrank5,".</li></ul>"), paste0(" is not in the top 10% of neighbourhoods in SIMD income group ", Datazone@data$SIMDrank5,".</li></ul>")),
@@ -1955,11 +1990,11 @@ shinyServer(function(input, output) {
     MortAdd$Tobrelated_smr<-as.numeric(MortAdd$Tobrelated_smr)
     MortAdd$Alcrelated_smr<-as.numeric(MortAdd$Alcrelated_smr)
     MortAdd$Alcrelated_smr<-quantcut(MortAdd$Alcrelated_smr, 5)
+    levels(MortAdd$Alcrelated_smr)<-sub("\\(|\\[|\\]", "", levels(MortAdd$Alcrelated_smr))
+    levels(MortAdd$Alcrelated_smr)<-sub("\\]", "", levels(MortAdd$Alcrelated_smr))
     MortAdd$Tobrelated_smr<-quantcut(MortAdd$Tobrelated_smr, 5)
     levels(MortAdd$Tobrelated_smr)<-sub("\\(|\\[", "", levels(MortAdd$Tobrelated_smr))
     levels(MortAdd$Tobrelated_smr)<-sub("\\]", "", levels(MortAdd$Tobrelated_smr))
-    levels(MortAdd$Alcrelated_smr)<-sub("\\(|\\[|\\]", "", levels(MortAdd$Alcrelated_smr))
-    levels(MortAdd$Alcrelated_smr)<-sub("\\]", "", levels(MortAdd$Alcrelated_smr))
     Datazone<-merge(Datazone, MortAdd,by="code")
     # Hosp
     HospAdd<-read.csv(paste0("data/Hosp.csv"))
