@@ -614,7 +614,7 @@ shinyServer(function(input, output) {
   })
   
 ###################################################################################################################    
-  ## need to clear it with a button!
+
   location2<-NA
   observe({
     if(!is.null(input$lat)){
@@ -644,13 +644,7 @@ shinyServer(function(input, output) {
           Datazone <- spTransform(Datazone, CRS("+proj=longlat +datum=WGS84"))
           # Datazone2 is the datazone location
           Datazone2 <- Datazone[location[1,2], ]
-          #buffer<-gBuffer(map, width = 5000)
-          #buffer<-spTransform(buffer, proj4string(Datazone))
-          #Datazone3 <-gIntersects(Datazone, buffer, byid = T)
-          #Datazone3<- as.data.frame(t(Datazone3))
-          #Datazone@data <-cbind(Datazone@data, Datazone3)
-          #Datazone<-Datazone[Datazone@data$buffer==T, ]
-          
+
           ### get the data in
           data <- as.character(paste0(input$buffer, input$datatype, input$year, ".csv"))
           add<-read.csv(paste0("data/output/",data))
@@ -683,10 +677,6 @@ shinyServer(function(input, output) {
           Datazone@data$SCOcat4<-sub("NA ", "", Datazone@data$SCOcat4)
           Datazone@data$SCOcat4<-trimws(Datazone@data$SCOcat4)
           Datazone@data$SCOcat4<-as.numeric(Datazone@data$SCOcat4)
-          
-          ## too slow load up from file- simplify-
-          # Datazone@data$LAid<-99
-          # LAoutline <- gUnaryUnion(Datazone, id = Datazone@data$LAid)
           
           ###################################################################################################################
           ################## Urban Rural
@@ -1143,7 +1133,6 @@ shinyServer(function(input, output) {
   })
   
   ### gets geolocation manually
-  ### To DO: make it so that it zooms in, change up location of fitBounds
   ### Check this out:  http://www.r-graph-gallery.com/2017/03/14/4-tricks-for-working-with-r-leaflet-and-shiny/ 
   observe({
     observeEvent(input$goButton, {
@@ -1179,13 +1168,6 @@ shinyServer(function(input, output) {
             Datazone <- spTransform(Datazone, CRS("+proj=longlat +datum=WGS84"))
             # Datazone2 is the datazone location
             Datazone2 <- Datazone[location[1,2], ]
-            #buffer<-gBuffer(map, width = 5000)
-            #buffer<-spTransform(buffer, proj4string(Datazone))
-            #Datazone3 <-gIntersects(Datazone, buffer, byid = T)
-            #Datazone3<- as.data.frame(t(Datazone3))
-            #Datazone@data <-cbind(Datazone@data, Datazone3)
-            #Datazone<-Datazone[Datazone@data$buffer==T, ]
-            
             
             ### get the data in
             data <- as.character(paste0(input$buffer, input$datatype, input$year, ".csv"))
@@ -1219,10 +1201,6 @@ shinyServer(function(input, output) {
             Datazone@data$SCOcat4<-sub("NA ", "", Datazone@data$SCOcat4)
             Datazone@data$SCOcat4<-trimws(Datazone@data$SCOcat4)
             Datazone@data$SCOcat4<-as.numeric(Datazone@data$SCOcat4)
-            
-            ## too slow load up from file- simplify-
-            # Datazone@data$LAid<-99
-            # LAoutline <- gUnaryUnion(Datazone, id = Datazone@data$LAid)
             
             ###################################################################################################################
             ################## Urban Rural
@@ -1737,10 +1715,6 @@ shinyServer(function(input, output) {
       Datazone@data$SCOcat4<-trimws(Datazone@data$SCOcat4)
       Datazone@data$SCOcat4<-as.numeric(Datazone@data$SCOcat4)
       
-      ## too slow load up from file- simplify-
-      # Datazone@data$LAid<-99
-      # LAoutline <- gUnaryUnion(Datazone, id = Datazone@data$LAid)
-      
       ###################################################################################################################
       ################## Urban Rural
       add2<-read.csv(paste0("data/urbanrural.csv"))
@@ -1861,13 +1835,7 @@ shinyServer(function(input, output) {
         
         #################
         mapit  %>%
-          
-          #addPolygons(data=LAoutline,
-          #            stroke=T,
-          #            weight=3,
-          #            color= "black",
-          #            fillOpacity = 0) #%>%
-          
+
           addPolygons(data=Datazone,
                       stroke=T,
                       weight=0.3,
@@ -1919,12 +1887,7 @@ shinyServer(function(input, output) {
         
         
         mapit %>% 
-          #addPolygons(data=LAoutline,
-          #            stroke=T,
-          #            weight=3,
-          #            color= "black",
-          #            fillOpacity = 0) #%>%
-          
+ 
           addPolygons(data=Datazone,
                       stroke=TRUE,
                       weight=0.1,
@@ -1952,12 +1915,7 @@ shinyServer(function(input, output) {
         
         #####################
         mapit  %>%
-          #addPolygons(data=LAoutline,
-          #            stroke=T,
-          #            weight=3,
-          #            color= "black",
-          #            fillOpacity = 0) #%>%
-          
+
           addPolygons(data=Datazone,
                       stroke=TRUE,
                       weight=0.1,
@@ -1978,6 +1936,7 @@ shinyServer(function(input, output) {
   
   
   ##################################### DOWNLOAD FACILITY
+  
   Dataset <- reactive({
     datatypeOUT<-input$datatype
     strOUT<-input$str
@@ -1995,6 +1954,12 @@ shinyServer(function(input, output) {
     MortAdd<-read.csv("data/Mort.csv")
     MortAdd$Tobrelated_smr<-as.numeric(MortAdd$Tobrelated_smr)
     MortAdd$Alcrelated_smr<-as.numeric(MortAdd$Alcrelated_smr)
+    MortAdd$Alcrelated_smr<-quantcut(MortAdd$Alcrelated_smr, 5)
+    MortAdd$Tobrelated_smr<-quantcut(MortAdd$Tobrelated_smr, 5)
+    levels(MortAdd$Tobrelated_smr)<-sub("\\(|\\[", "", levels(MortAdd$Tobrelated_smr))
+    levels(MortAdd$Tobrelated_smr)<-sub("\\]", "", levels(MortAdd$Tobrelated_smr))
+    levels(MortAdd$Alcrelated_smr)<-sub("\\(|\\[|\\]", "", levels(MortAdd$Alcrelated_smr))
+    levels(MortAdd$Alcrelated_smr)<-sub("\\]", "", levels(MortAdd$Alcrelated_smr))
     Datazone<-merge(Datazone, MortAdd,by="code")
     # Hosp
     HospAdd<-read.csv(paste0("data/Hosp.csv"))
@@ -2030,12 +1995,6 @@ shinyServer(function(input, output) {
       datatable(Dataset()),
       server = FALSE
     )
-  
-  #output$filtered_row <- 
-  # renderPrint({
-  #    input[["dt_rows_all"]]
-  #  })
-  
   
   output$download_filtered <- 
     downloadHandler(
@@ -2078,8 +2037,7 @@ shinyServer(function(input, output) {
       span("*", class = "mandatory_star")
     )
   }
-  ######
-  
+
   ######## Remember time stamp is NOT corrected for BST
   
   # get current Epoch time
@@ -2122,8 +2080,6 @@ shinyServer(function(input, output) {
     shinyjs::toggleState(id = "submit", condition = mandatoryFilled)
     shinyjs::toggleState(id = "download_filtered", condition = mandatoryFilled)
   })
-  
-  
   
   # save the results to a file
   options(mongodb = list(
@@ -2176,22 +2132,7 @@ shinyServer(function(input, output) {
     saveData(AllInputs(), "inputs")
     
   })
-  ################## who are the people using this!
-  
-  ## create zipped file
-  
-  
-  #output$downloadData <- downloadHandler(
-  #  filename = function() {
-  #    paste(input$select,input$Date, input$Type,".zip",sep='') 
-  #  },
-  #  content = function(file) {
-  #   file.copy(paste(input$select,input$Date, input$Type,".zip",sep=''), file)
-  # },
-  # contentType = "application/zip"
-  #)
-  
-  
+
   
   
 })

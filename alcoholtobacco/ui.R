@@ -9,28 +9,8 @@ library(ggplot2)
 ### http://stackoverflow.com/questions/28938642/marker-mouse-click-event-in-r-leaflet-for-shiny
 
 
-#list<-readRDS("data/list.rds")
-#list<-unique(list[,1])
 list<-read.csv("data/list.csv", header=F)
 list<-list[1:nrow(list),]
-
-## Somehow take out V1 in the selection box!!!
-
-# log scale
-JScode <-
-  "$(function() {
-    setTimeout(function(){
-      var vals = [0];
-      var powStart = 1;
-      var powStop = 7;
-      for (i = powStart; i <= powStop; i++) {
-        var val = Math.pow(10, i);
-        val = parseFloat(val.toFixed(8));
-        vals.push(val);
-      }
-      $('#range').data('ionRangeSlider').update({'values':vals})
-    }, 5)})"
-
 
 ##
 textInputRow<-function (inputId, label, value = "") 
@@ -67,7 +47,19 @@ shinyUI(fluidPage(
   
   tags$style(type = "text/css", "#map {height: calc(100vh - 110px) !important;}"),
 
-  headerPanel("Alcohol and Tobacco Environments in Scotland"),
+  headerPanel(fluidRow(
+    column(9, "Alcohol and Tobacco Environments in Scotland"), 
+    column(3, tags$a(href="https://cresh.org.uk/",img(height = 63, width = 115, src = "Cresh_green_small2.png"))),
+    column(3, tags$a(href="http://www.esrc.ac.uk/",img(height = 129, width = 159, src = "ESRC.png"))),
+    column(3, tags$a(href="http://www.ed.ac.uk/home",img(height = 73.5, width = 73.5, src = "Edin.png"))),
+    column(3, tags$a(href="http://www.gla.ac.uk/",img(height = 114.5, width = 267, src = "UoG.jpg"))),
+    column(3, tags$a(href="http://www.alcohol-focus-scotland.org.uk/",img(height = 64, width = 136, src = "AFS.jpg"))),
+    column(3, tags$a(href="http://www.ashscotland.org.uk/",img(height = 90, width = 154, src = "ash-logo.png"))),
+    column(3, tags$a(href="http://www.scphrp.ac.uk/",img(height = 61.666, width = 212, src = "SCPHRP.jpg")))
+    )
+  , windowTitle = "Alcohol and Tobacco Environments in Scotland"),
+
+
   ### CRESH favicon
   tags$head(tags$link(rel = "shortcut icon", href="http://www.iconj.com/ico/g/g/ggtzbwew2b.ico", type="image/x-icon")),
   tags$head(tags$style("#summary{
@@ -96,7 +88,6 @@ shinyUI(fluidPage(
   sidebarPanel( 
     strong("Description"),
     helpText("This application allows you to map alcohol and tobacco outlet density and related harm for small neighbourhoods across Scotland. Further information is available from the 'About' and 'How to Use' tabs on the right hand side."),
-    tags$head(tags$script(HTML(JScode))),
     # adding the new div tag to the sidebsar            
     bsTooltip("LAinput", "We have used 2011 Scottish datazones as our smallest neighbourhood units. As there nearly 7,000, choose to display a subset by selecting up to 5 local authorities. If you do wish to view the whole of Scotland, select the Scotland option, however please be patient, this will result in much longer loading times", "top"
     ),
@@ -141,7 +132,7 @@ shinyUI(fluidPage(
                      "Compared to Deprivation Average"  = "SIMD"
                 ), selected="SCO"),
   tags$br(),
-    helpText("Application built in Rstudio (0.98.507) using data...acknowledgements...")),
+    helpText("Application built in Rstudio (0.98.507)")),
   tags$br(),
   mainPanel(
     tabsetPanel(type = "tabs",
@@ -155,7 +146,8 @@ shinyUI(fluidPage(
                          DT::dataTableOutput("dt"),
                          verbatimTextOutput("filtered_row"),
                          downloadButton(outputId = "download_filtered",
-                                        label = "Download Filtered Data"))
+                                        label = "Download Filtered Data")),
+                tabPanel("Acknowledgements", includeHTML("acknowledgements.html"))
     ))
 ))
 
