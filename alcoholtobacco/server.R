@@ -81,7 +81,7 @@ shinyServer(function(input, output) {
       addProviderTiles("OpenStreetMap.BlackAndWhite", group = "OSM") %>%
       setView(lng =-4.2026, lat = 56.4907, zoom = 7) %>%
       addLayersControl(
-        baseGroups = c("CartoDB Positron", "Toner", "OSM"),
+        baseGroups = c("CartoDB Positron", "OSM", "Toner"),
         options = layersControlOptions(collapsed = TRUE)) %>%
       addLegend("bottomright", 
                 colors=c("#e37779", "#f0a89e", "#fcd0c2", "#fafae9","#d6dade","#b8c9da", "#91b1d4"),
