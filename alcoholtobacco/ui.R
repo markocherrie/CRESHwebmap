@@ -107,7 +107,6 @@ headerPanel(
     selectInput("datatype", "Data Type:",
                 c("Alcohol On Sales" = "alcoholOn",
                   "Alcohol Off Sales" = "alcoholOff",
-                  "Alcohol Both On and Off Sales" = "alcoholBoth",
                   "Alcohol Total Sales" = "alcoholTOTAL",
                   "Tobacco Total Sales" = "tobaccoTOTAL"), selected="alcoholTOTAL"),
     selectInput("year", "Year",
