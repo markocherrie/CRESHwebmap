@@ -8,6 +8,7 @@ On your computer
 ## Make changes to the images (GIMP)
 
 go to directory with files
+/c/Users/mcherrie/Google Drive/ProjectFiles/CRESHwebmap/alcoholtobacco
 git status
 git add .
 git commit -m "Create a useful message"
@@ -21,6 +22,8 @@ go to the same directory of files, should be in:
 git status
 git pull origin master
 markocherrie, **input normal pass but slightly diff ;) **
+
+### if you have changed the images or html file then
 
 now you want to copy the files to the nginx server (/usr/share/nginx/html)
 
