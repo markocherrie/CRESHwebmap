@@ -13,8 +13,8 @@ subset <- Scotland@data
 
 spdf <- SpatialPolygonsDataFrame(Scotland2, data =subset)
 
-spdf@data[4:9]<-NA
-spdf@data[11:15]<-NA
+spdf@data[4:10]<-NA
+spdf@data[12:15]<-NA
 
 
 saveRDS(spdf,"C:/Users/mcherrie/Downloads/testOGR/Scotland3.rds")
