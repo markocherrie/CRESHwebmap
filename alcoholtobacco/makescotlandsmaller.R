@@ -21,4 +21,4 @@ saveRDS(spdf,"C:/Users/mcherrie/Downloads/testOGR/Scotland.rds")
 
 
 
-writeOGR(spdf, "C:/Users/mcherrie/Downloads/testOGR", "Scotland2", driver="ESRI Shapefile")
+writeOGR(spdf, "C:/Users/mcherrie/Downloads/testOGR", "Scotland3", driver="ESRI Shapefile")
