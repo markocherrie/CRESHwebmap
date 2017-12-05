@@ -7,17 +7,17 @@ object.size(Scotland)
 
 Scotland2 <- rmapshaper::ms_simplify(Scotland, keep = 0.01, keep_shapes=T)
 
-object.size(Scotland2)
-
 subset <- Scotland@data
 
 spdf <- SpatialPolygonsDataFrame(Scotland2, data =subset)
+
+object.size(spdf)
 
 spdf@data[4:10]<-NA
 spdf@data[12:15]<-NA
 
 
-saveRDS(spdf,"C:/Users/mcherrie/Downloads/testOGR/Scotland3.rds")
+saveRDS(spdf,"C:/Users/mcherrie/Downloads/testOGR/Scotland.rds")
 
 
 
