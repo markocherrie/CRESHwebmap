@@ -1,4 +1,4 @@
-Scotland<-readRDS("C:/Users/mcherrie/Downloads/testOGR/ScotlandOLD3.rds")
+Scotland<-readRDS("C:/Users/mcherrie/Downloads/testOGR/ScotlandOLD.rds")
 
 object.size(Scotland)
 
