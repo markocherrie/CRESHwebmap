@@ -1527,7 +1527,8 @@ shinyServer(function(input, output) {
                             popup=popup,
                             color= ~pal(SCOcat4),
                             highlightOptions = highlightOptions(color = "black", weight = 3,
-                                                                bringToFront = TRUE)) 
+                                                                bringToFront = TRUE)) %>%
+  		addMarkers(map2$long, map2$lat)
             }
             else if(input$comparison=="LA"){
               pal <- colorNumeric(c("#5d8bba", "#ffffe5", "#d73027"), 1:7)   
@@ -1578,7 +1579,8 @@ shinyServer(function(input, output) {
                             popup=popup,
                             color= ~pal(LAcat4),
                             highlightOptions = highlightOptions(color = "black", weight = 3,
-                                                                bringToFront = TRUE))
+                                                                bringToFront = TRUE)) %>%
+                addMarkers(map2$long, map2$lat)
               
             }
             else if(input$comparison=="URBRUR"){
@@ -1630,7 +1632,8 @@ shinyServer(function(input, output) {
                             popup=popup,
                             color= ~pal(UrbRurcat4),
                             highlightOptions = highlightOptions(color = "black", weight = 3,
-                                                                bringToFront = TRUE)) 
+                                                                bringToFront = TRUE)) %>%
+                addMarkers(map2$long, map2$lat) 
               
             }
             else if(input$comparison=="SIMD"){
@@ -1684,7 +1687,8 @@ shinyServer(function(input, output) {
                             popup=popup,
                             color= ~pal(SIMDcat4),
                             highlightOptions = highlightOptions(color = "black", weight = 3,
-                                                                bringToFront = TRUE)) 
+                                                                bringToFront = TRUE)) %>%
+                addMarkers(map2$long, map2$lat) 
               
               
             

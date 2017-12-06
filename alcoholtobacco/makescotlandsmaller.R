@@ -5,7 +5,7 @@ object.size(Scotland)
 #library(rgeos)
 #Scotland2<-gSimplify(Scotland, 20, topologyPreserve = T)
 
-Scotland2 <- rmapshaper::ms_simplify(Scotland, keep = 0.01, keep_shapes=T)
+Scotland2 <- rmapshaper::ms_simplify(Scotland, keep = 0.2, keep_shapes=T)
 
 subset <- Scotland@data
 
