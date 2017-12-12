@@ -2073,6 +2073,10 @@ shinyServer(function(input, output) {
       actionButton("submit", "Submit", class = "btn-primary")
     ) })
   
+  observeEvent(input$submit, {
+    shinyjs::alert("Thank you! Now click on the Download tab")
+  })
+  
   ### Not doing anything at the moment!  
   # add an asterisk to an input label
   labelMandatory <- function(label) {
