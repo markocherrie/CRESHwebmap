@@ -7,6 +7,9 @@ On your computer
 ## Make changes to the web pages (Brackets)
 ## Make changes to the images (GIMP)
 
+## REMEMBER IF YOU MAKE CHANGES IN R THAT REQUIRE PACKAGES THEN:
+# sudo su - - c "R -e \"devtools::install_github('timeleyportfolio/sweetalertR')\
+
 go to directory with files
 /c/Users/mcherrie/Google Drive/ProjectFiles/CRESHwebmap/alcoholtobacco
 git status
