@@ -13,6 +13,7 @@ library(mongolite)
 library(rgdal)
 library(DT)
 library(leaflet.extras)
+library(sweetalertR)
 # devtools::install_github("hrbrmstr/ipapi")
 library(ipapi)
 
@@ -2070,12 +2071,15 @@ shinyServer(function(input, output) {
                        "Other" = "Other")),
       textInput("other", "If other, please provide detail", ""),
       textInput("use", "Data will be used for", ""),
-      actionButton("submit", "Submit", class = "btn-primary")
+      actionButton("submit", "Submit", class = "btn-primary"),
+      sweetalert(selector = "#submit", text = "Thank you! Now click on the Download tab", title = "Submit", type="success")
     ) })
   
-  observeEvent(input$submit, {
-    shinyjs::alert("Thank you! Now click on the Download tab")
-  })
+  #observeEvent(input$submit, {
+  #shinyWidgets::sendSweetAlert(
+  #  session = session, title = "Success !!", text = "All in order", type = "success"
+    #shinyjs::alert("Thank you! Now click on the Download tab")
+  #})
   
   ### Not doing anything at the moment!  
   # add an asterisk to an input label
