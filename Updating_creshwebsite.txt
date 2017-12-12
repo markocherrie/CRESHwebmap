@@ -16,6 +16,7 @@ git push origin master
 
 now got to the remote computer terminal through putty
 
+
 go to the same directory of files, should be in:
 /srv/shiny-server
 

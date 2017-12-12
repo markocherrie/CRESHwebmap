@@ -2045,7 +2045,7 @@ shinyServer(function(input, output) {
       filename = "CRESH_ALCTOBDATA.csv",
       content = function(file){
         write.csv(Dataset()[input[["dt_rows_all"]], ],
-                  file)
+                  file, row.names = F)
       }
     )
   
