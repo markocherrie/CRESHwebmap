@@ -90,7 +90,7 @@ headerPanel(
   )),
   sidebarPanel( 
     strong("Description"),
-    helpText("This application allows you to map alcohol and tobacco outlet density and related harm for small neighbourhoods across Scotland. Further information is available from the 'About' and 'How to Use' tabs on the right hand side."),
+    helpText("This application allows you to map the number of alcohol and tobacco outlets and related harm for small neighbourhoods across Scotland. Further information is available from the 'About' and 'How to Use' tabs on the right hand side."),
     # adding the new div tag to the sidebsar            
     bsTooltip("LAinput", "We have used 2011 Scottish datazones as our smallest neighbourhood units. As there nearly 7,000, choose to display a subset by selecting up to 5 local authorities. If you do wish to view the whole of Scotland, select the Scotland option, however please be patient, this will result in much longer loading times", "top"
     ),
@@ -113,7 +113,7 @@ headerPanel(
                 list("2012" = "2012",
                      "2016" = "2016"),
                 selected="2016"),
-    bsTooltip("buffer", "In the density calculation this is also known as the buffer size, that is, the distance you would expect people to travel to visit these outlets. Larger buffer sizes may be more appropriate for rural areas and smaller ones for urban areas.", "top"
+    bsTooltip("buffer", "This is also known as the buffer size, that is, the distance you would expect people to travel to visit these outlets. Larger buffer sizes may be more appropriate for rural areas and smaller ones for urban areas.", "top"
     ),
     selectInput("buffer", "Typical Distance to Outlet (metres)",
                 list("400" = "400",
