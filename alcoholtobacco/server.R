@@ -197,7 +197,7 @@ shinyServer(function(input, output) {
         ######################   SIMD
         add4<-read.csv(paste0("data/SIMD.csv"))
         SIMD<-merge(add, add4, by.x="CODE", by.y="Data_Zone")
-        SIMD$SIMDrank5<-as.numeric(quantcut(as.numeric(SIMD$Income_domain_2016_rank), 5))
+        #SIMD$SIMDrank5<-as.numeric(quantcut(as.numeric(SIMD$Income_domain_2016_rank), 5))
         SIMDmean <-aggregate(SIMD[,2], by=list(SIMD$SIMDrank5), FUN=mean, na.rm=TRUE)
         names(SIMDmean)<-c("SIMDrank5", "SIMDmean")
         SIMDCalc<-merge(SIMDmean, SIMD, by="SIMDrank5")
@@ -728,7 +728,7 @@ shinyServer(function(input, output) {
           ######################   SIMD
           add4<-read.csv(paste0("data/SIMD.csv"))
           SIMD<-merge(add, add4, by.x="CODE", by.y="Data_Zone")
-          SIMD$SIMDrank5<-as.numeric(quantcut(as.numeric(SIMD$Income_domain_2016_rank), 5))
+          #SIMD$SIMDrank5<-as.numeric(quantcut(as.numeric(SIMD$Income_domain_2016_rank), 5))
           SIMDmean <-aggregate(SIMD[,2], by=list(SIMD$SIMDrank5), FUN=mean, na.rm=TRUE)
           names(SIMDmean)<-c("SIMDrank5", "SIMDmean")
           SIMDCalc<-merge(SIMDmean, SIMD, by="SIMDrank5")
@@ -1271,7 +1271,7 @@ shinyServer(function(input, output) {
             ######################   SIMD
             add4<-read.csv(paste0("data/SIMD.csv"))
             SIMD<-merge(add, add4, by.x="CODE", by.y="Data_Zone")
-            SIMD$SIMDrank5<-as.numeric(quantcut(as.numeric(SIMD$Income_domain_2016_rank), 5))
+            #SIMD$SIMDrank5<-as.numeric(quantcut(as.numeric(SIMD$Income_domain_2016_rank), 5))
             SIMDmean <-aggregate(SIMD[,2], by=list(SIMD$SIMDrank5), FUN=mean, na.rm=TRUE)
             names(SIMDmean)<-c("SIMDrank5", "SIMDmean")
             SIMDCalc<-merge(SIMDmean, SIMD, by="SIMDrank5")
@@ -1749,8 +1749,8 @@ shinyServer(function(input, output) {
     # SIMD
     SIMD<-read.csv(paste0("data/SIMD.csv"))
     Datazone<-merge(Datazone, SIMD, by.x="code", by.y="Data_Zone")
-    Datazone@data$Income_domain_2016_rank<-sub(",", "", Datazone@data$Income_domain_2016_rank)
-    Datazone@data$SIMDrank5<-as.numeric(quantcut(as.numeric(Datazone@data$Income_domain_2016_rank), 5))
+    #Datazone@data$Income_domain_2016_rank<-sub(",", "", Datazone@data$Income_domain_2016_rank)
+    #Datazone@data$SIMDrank5<-as.numeric(quantcut(as.numeric(Datazone@data$Income_domain_2016_rank), 5))
     # Crime
     Crime<-read.csv(paste0("data/crime.csv"))
     Datazone<-merge(Datazone, Crime,by="code")
