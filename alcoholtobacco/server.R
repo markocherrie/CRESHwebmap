@@ -1806,8 +1806,10 @@ shinyServer(function(input, output) {
                        "Other" = "Other")),
       textInput("other", "If other, please provide detail", ""),
       textInput("use", "Data will be used for", ""),
+      checkboxInput("terms", "If you accept the terms of this website, please tick this box.", FALSE),
+      checkboxInput("emails", "If you consent to receiving emails from us, please tick the box.", FALSE),
       actionButton("submit", "Submit", class = "btn-primary"),
-      sweetalert(selector = "#submit", text = "Thank you! Now click on the Download tab", title = "Submit", type="success")
+      sweetalert(selector = "#submit", text = "Thank you! Now click on the Download tab", title = "Submitted", type="success")
     ) })
   
   #observeEvent(input$submit, {
@@ -1839,9 +1841,9 @@ shinyServer(function(input, output) {
   }
   
   # which fields are mandatory
-  fieldsMandatory <- c("email", "name", "reason", "use")
+  fieldsMandatory <- c("email", "name", "reason", "use",  "terms", "emails")
   
-  fieldsAll <- c("email", "name", "reason", "other","use")
+  fieldsAll <- c("email", "name", "reason", "other","use", "terms", "emails")
   epochTime <- function() {
     as.integer(Sys.time())
   }

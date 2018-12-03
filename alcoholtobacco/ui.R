@@ -147,7 +147,8 @@ headerPanel(
                          verbatimTextOutput("filtered_row"),
                          downloadButton(outputId = "download_filtered",
                                         label = "Download Filtered Data")),
-                tabPanel("Acknowledgements", includeHTML("acknowledgements.html"))
+                tabPanel("Acknowledgements", includeHTML("acknowledgements.html")),
+                tabPanel("Privacy Policy", includeHTML("privacypolicy.html"))
     ))
 ))
 

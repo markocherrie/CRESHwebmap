@@ -44,3 +44,9 @@ sudo service nginx start
 sudo service nginx restart
 
 
+### If there are issues with the webmap then most likely it just needs to
+### download new security items on a reboot, so copy and paste this from the terminal:
+
+sudo shutdown -r now
+
+
