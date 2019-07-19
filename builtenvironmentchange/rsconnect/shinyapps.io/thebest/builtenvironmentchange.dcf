@@ -1,0 +1,12 @@
+name: builtenvironmentchange
+title: builtenvironmentchange
+username:
+account: thebest
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 715981
+bundleId: 2246709
+url: https://thebest.shinyapps.io/BuiltEnvironmentChange/
+when: 1563522183.61882
+asMultiple: FALSE
+asStatic: FALSE

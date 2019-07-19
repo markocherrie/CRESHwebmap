@@ -9,6 +9,10 @@ On your computer
 
 ## REMEMBER IF YOU MAKE CHANGES IN R THAT REQUIRE PACKAGES THEN:
 # sudo su - - c "R -e \"devtools::install_github('timeleyportfolio/sweetalertR')\
+# sudo su - \-c "R -e \"install.packages('mapview', repos='https://cran.rstudio.com/')\""
+# sudo su - \-c "R -e \"devtools::install_github('r-spatial/mapview@develop')\""
+
+
 
 go to directory with files
 /c/Users/mcherrie/Google Drive/ProjectFiles/CRESHwebmap/alcoholtobacco
