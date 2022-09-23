@@ -13,7 +13,7 @@ library(mongolite)
 library(rgdal)
 library(DT)
 library(leaflet.extras)
-library(sweetalertR)
+library(shinyWidgets)
 # devtools::install_github("hrbrmstr/ipapi")
 library(ipapi)
 
@@ -77,9 +77,7 @@ shinyServer(function(input, output) {
   # Create the map
   output$map <- renderLeaflet({
     leaflet() %>%
-      addProviderTiles("CartoDB.Positron", group = "CartoDB Positron") %>%
-      addProviderTiles("Stamen.Toner", group = "Stamen Toner") %>%
-      addProviderTiles("OpenStreetMap.BlackAndWhite", group = "OSM") %>%
+      addProviderTiles(providers$Stamen.Toner)  %>%
       setView(lng =-4.2026, lat = 56.4907, zoom = 7) %>%
       addLayersControl(
         baseGroups = c("CartoDB Positron", "OSM", "Toner"),

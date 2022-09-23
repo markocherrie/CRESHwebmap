@@ -1,3 +1,4 @@
+###### PACKAGES
 library(shiny)
 library(shinyjs)
 library(leaflet)
@@ -8,11 +9,11 @@ library(ggplot2)
 ###updates--- to get datazones that have been clicked
 ### http://stackoverflow.com/questions/28938642/marker-mouse-click-event-in-r-leaflet-for-shiny
 
-
+####### READ LIST OF LOCAL AUTHORITIES
 list<-read.csv("data/list.csv", header=F)
 list<-list[1:nrow(list),]
 
-##
+####### NOT SURE
 textInputRow<-function (inputId, label, value = "") 
 {
   div(style="display:inline-block",
@@ -20,13 +21,12 @@ textInputRow<-function (inputId, label, value = "")
       tags$input(id = inputId, type = "text", value = value,class="input-small"))
 }
 
-
+####### Shiny fluid page set sup
 shinyUI(fluidPage(
   useShinyjs(),  # Include shinyjs
   
-# geolocation
+# Set the fonts and css for map window
 tags$style(type = "text/css", "#map {height: calc(100vh - 160px) !important;}"),
-
 tags$head(
   tags$style(HTML("
                   @import url('//fonts.googleapis.com/css?family=Roboto+Slab');
