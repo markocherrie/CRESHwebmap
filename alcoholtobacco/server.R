@@ -24,7 +24,7 @@ geog<-readRDS("geography/councilareas.rds")
 
 ####
 BING <- function(str){
-  u <- URLencode(paste0("http://dev.virtualearth.net/REST/v1/Locations?q=", str, "&maxResults=1&key=Apo4HssxpmYvVbDEUA464pmX5Y30xsQNlJ4pES6Z6D056puS63D90MLZlQ1yVeTG"))
+    u <- URLencode(paste0("http://dev.virtualearth.net/REST/v1/Locations?q=", str, "&maxResults=1&key=",Sys.getenv(c("BINGKEY"))))
   d <- getURL(u)
   j <- RJSONIO::fromJSON(d,simplify = FALSE) 
   if (j$resourceSets[[1]]$estimatedTotal > 0) {
